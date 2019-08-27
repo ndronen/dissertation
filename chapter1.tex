@@ -1,0 +1,332 @@
+\chapter{Introduction}
+\label{chap:Introduction}
+
+\section{Motivation}
+
+\todo[inline]{Introduce distributional hypothesis early, emphasize difference between continuous vector-space models and discrete probabilistic models.}
+
+Detecting and correcting errors in writing is useful in many contexts. Collaborative online encyclopedias -- because they are written by many authors with variable writing abilities -- can benefit from tools that detect and correct errors.  Rapid digital writing (e.g. email, SMS, Twitter, and other short-form platforms) increases typographic errors, hindering communication. Software applications that evaluate learner writing can benefit from error detection and correction components as well.  
+
+Examples of such educational applications are interactive writing tutors and automated assessment systems.  When a learner makes a mistake, an interactive writing tutor's error detection component can bring it to the learner's attention, thereby giving them an opportunity to correct it.  If the learner is unable to correct the error, the tutor's error correction component can suggest one or more possible corrections.  An automated assessment system equipped with an error detection component can use the number of detected errors of various kinds to evaluate the quality of a written essay.  Automated correction may be performed prior to training a supervised statistical model for scoring, particularly when the writing consists of short responses written to text a student's understanding of a passage.  In such cases, human raters are often instructed to ignore, for instance, spelling errors.  In order not to corrupt the student's intended response, the automated correction must be of the highest possible accuracy.  
+
+In the spelling error literature, several types of errors and tasks have been identified \cite{kukich1992techniques}.  An error can be either a \textit{real-word} or a \textit{non-word} error.  A real-word error occurs when a real word is used in an inappropriate context, such as ``The room was \textit{quiet} loud'' rather than ``The room was \textit{quite} loud.''  A non-word occurs when a word is used that is not known to be a valid word in a given language.  Non-word error detection is determining whether a word is a real word in a given language.  \textit{Isolated} non-word error correction is correcting a non-word using only the non-word as evidence.  \textit{Context-dependent} non-word error correction uses the context of the error as evidence.  \textit{Real-word} error correction is by definition context-dependent.  
+
+The steps a spelling error system takes in common application scenarios are shown in Figure \ref{fig:SpellingErrorSystemSteps}: Figure \ref{fig:SpellingErrorSystemCheck} has the requisite steps for error detection alone; Figure \ref{fig:SpellingErrorSystemSuggest} has the steps for error correction that delegates responsibility for choosing the correct suggestion to the user; and the steps the system takes when performing automated correction are in Figure \ref{fig:SpellingErrorSystemCorrect}}.  The final step (shown in green) is the responsibility of the application interacting with the spelling system; it is shown here to provide context.  Throughout this dissertation we refer to these scenarios as \textit{modes} of a spelling error system -- respectively, \textbf{CHECK}, \textbf{SUGGEST}, and \textbf{CORRECT}.  We refer to each step as a \textit{component} of a spell checking system.  The components identified in Figure \ref{fig:SpellingErrorSystemSteps} are \textbf{CHECK}, \textbf{RETRIEVE}, \textbf{RANK}, and \textbf{RETURN}; for clarity, we qualify uses of \textbf{CHECK} as either a mode or a component.
+
+Recent work has shown that neural networks can be very powerful when judiciously applied to large amounts of data.  Convolutional neural networks (ConvNet) \cite{LeCun1998-ku}, for example, have achieved state of the art performance on image classification tasks \cite{Russakovsky2014-nk}.  These models are trained in a supervised fashion and thus require a large number of labels.  While obtaining large labeled data sets has become easier, the amount of unlabeled data -- images, video, and text -- available has grown exponentially since the advent of the Internet and the World Wide Web.  ConvNets have been applied successfully to natural language processing tasks in recent years \cite{Collobert2008-su,Kalchbrenner2014-tl,Kim2014-vy,Johnson2014-ol}. It would therefore be desirable to be able to train ConvNets on the vast unlabeled corpora we have at our disposal.  Indeed, ConvNets have recently been successfully applied as character-level language models, achieving parity with the state of the art on a language modeling dataset \cite{kim2015character}.
+
+\begin{figure}
+\centering
+  \begin{subfigure}{\textwidth}
+  \centering
+  \smartdiagramset{border color=none,back arrow disabled=false,set color list={red!80,blue!80,green!80},text width=2cm}
+  \smartdiagram[flow diagram:horizontal]{\textbf{CHECK},\textbf{{RETURN}} True or False,Allow user to correct}
+  \caption{Spelling error detection steps.} 
+  \label{fig:SpellingErrorSystemCheck}
+  \end{subfigure}
+  
+  \begin{subfigure}{\textwidth}
+  \centering
+  %\includegraphics[width=.8\linewidth]{image2}
+  \smartdiagramset{border color=none,back arrow disabled=true,set color list={red!80,orange!80,yellow!80,blue!80,green!80},text width=2cm}
+  \smartdiagram[flow diagram:horizontal]{\textbf{CHECK},\textbf{RETRIEVE} candidates ,\textbf{RANK} candidates, \textbf{RETURN} candidates,Allow user to choose from list}
+  \caption{Spelling error correction allowing the user to select the best suggested correction.} 
+  \label{fig:SpellingErrorSystemSuggest}
+  \end{subfigure}
+  
+  \begin{subfigure}{\textwidth}
+  \centering
+  %\includegraphics[width=.8\linewidth]{image2}
+  \smartdiagramset{border color=none,back arrow disabled=true,set color list={red!80,orange!80,yellow!80,blue!80,green!80},text width=2cm}
+  \smartdiagram[flow diagram:horizontal]{\textbf{CHECK},\textbf{RETRIEVE} candidates ,\textbf{RANK} candidates, \textbf{RETURN} best candidate,Replace error with best candidate}
+  \caption{Spelling error correction with automatic correction.}
+  \label{fig:SpellingErrorSystemCorrect}
+  \end{subfigure}
+\caption{The steps of a spelling error system in different application scenarios.}
+\label{fig:SpellingErrorSystemSteps}
+\end{figure}
+
+The motivation for this dissertation is the need to improve the efficacy of educational applications.  The work we present here addresses this need by evaluating ConvNets against state of the art methods for automatically detecting and correcting spelling errors.  A fundamental assumption of our choice of ConvNets for this work is that they they are able to model sequences -- of characters or words -- well.  Our studies proceed constructively, starting with the simplest spelling task and proceeding to more complex ones.  This enables us to evaluate ConvNets as potential replacements for each component of a spelling error system. 
+
+%This allows us to understand the capabilities of ConvNets for each task\todo{Re-ranking versus integrated}.
+
+%The first stage is always to check whether an error exists.  If the system is being used only for error detection, the workflow stops 
+
+\section{Problems and contributions}
+
+In this section we discuss the research problems our work addresses and our work's contributions.  
+
+\subsection{Non-word error detection} 
+
+\begin{figure}
+\centering
+    \captionsetup[subfigure]{justification=centering}
+    \begin{subfigure}{.5\textwidth}
+    \centering
+    \input figures/check-binary.tex
+    \caption{Non-word error detection as binary classification.  The words in the vocabulary are members of one class (green); non-words are members of another (red).}
+    \label{fig:ConvNetBinaryErrorDetection}
+    \end{subfigure}
+    
+    \begin{subfigure}{.5\textwidth}
+    \centering
+    \input figures/check-multiclass.tex
+    \caption{Non-word error detection as multi-class classification.  Each word in the vocabulary is a member of its own class (here, green and blue); non words are members of the same class (red).}
+    \label{fig:ConvNetMulticlassErrorDetection}
+    \end{subfigure}
+\caption{When used for non-word error detection, a ConvNet can function either as a binary or a multi-class classifier.}
+\label{fig:ErrorDetectionAndClassification}
+\end{figure}
+
+Non-word error detection is the first component of any spelling error system.  See Figure \label{fig:SpellingSystemStepsCheck}.  The component can be seen as defining a hard boundary between words and non-words in some language.  Formally, let $A$ be a set of characters and $s \in A^n$ be a string of $n$ characters, and let $Boolean \in { True, False }$.  Then conventional error detection can be defined as a function $\textbf{CHECK}_{hard}: A^n \to Boolean$.  A vocabulary $V$ is a set of strings $s_i \in A^n$ such that $\forall s \in V: \textbf{CHECK}_{hard}(s) = True$ and $\forall s \notin V: \textbf{CHECK}_{hard}(s) = False$.  A word is any string $s \in V$; a non-word is any string $s \notin V$\todo{Distinguish formally between non-word error detection, $\textbf{CHECK}_{non-word}$, and real word error detection, $\textbf{CHECK}_{real-word}$.}.
+
+A ConvNet, by contrast, defines a soft boundary and can perform non-word error detection either as a binary classifier or as a multi-class classifier.  The functional form of the binary mode is $\textbf{CHECK}_{binary}: A^n \to [0,1]$, which can be reduced to the hard version by applying a threshold (e.g. of 0.5) such that values below the threshold map to $False$ and those above it to $True$.  The multiclass mode provides a distribution over the entire vocabulary: $\textbf{CHECK}_{multiclass} A^n \to p_0, p_1, \ldots, p_n$ where $n = |V|$ and $\sum_{i=0}^n p_i = 1$.  The binary mode yields the probability that a word is in the vocabulary, whereas the multiclass mode yields a probability distribution over the vocabulary.  These modes are shown in Figures \ref{fig:ConvNetBinaryErrorDetection} and \ref{fig:ConvNetMulticlassErrorDetection}.
+
+This soft boundary property of a ConvNet resembles the use of probabilistic language models as classifiers.  Consider two character-level language models, one (LM1) trained on real words from a language, the other (LM2) trained on spelling errors in that language.  When presented a word $w$, LM1 will give the probability that $w$ is in the language and LM2 will give a probability that it is not.  An important question is, then, whether and how a ConvNet binary classifier trained to distinguish words from non-words differs from a pair of language models trained to do the same thing.   
+
+%Language modeling with discrete versus distributed representations.  Is it only a question of size, with distributed representations generalizing better with smaller data sets \cite{ baltescu2014pragmatic,chen2015strategies,tran2016recurrent}.
+
+%\todo[inline]{One question here is size of training set.}
+%\todo[inline]{Another question is language modeling capabilities of Knesser-Ney language models versus ConvNets, RNNs, LSTMs, Bi-RNNs, and Bi-LSTMs.}
+
+%ConvNet as a dictionary / soft hash table / inference of language structure.
+
+%\subsection{ConvNets as language models}
+
+%Our contribution to ConvNets is a method for training them as language models. A useful property of ConvNets for natural language processing tasks is that they are sensitive to the order of word occurrence.  ConvNets are, however, typically only used in supervised learning contexts.  They don't easily lend themselves to the task of exploiting of the large unlabeled corpora available today.  This limitation restricts the application of ConvNets in the NLP domain to supervised tasks and their typically relatively small training sets.
+
+%We demonstrate how to use sentences to train a ConvNet as a language model using unlabeled corpora \cite{Okanohara2007-zp,Collobert2008-su}. The method requires only a corpus of sentences and a \textit{curriculum}. In the machine learning literature, \textit{curriculum learning} \cite{Bengio2009-ua} is a method for training a learning algorithm. It emulates curricula used in educational contexts by starting with simple concepts and progressing to more complex ones.  The notion of curriculum learning is that it is easier for an algorithm to learn an extremely complex function if it first learns the simpler functions on which the complex one depends.
+
+%The method is as follows.  Given an unlabeled data set, generate an artificial supervised training set consisting of (1) positive examples drawn from the unlabeled data set and (2) negative examples consisting of intentionally corrupt sentences.  The positive and negative examples are given targets 0 and 1, respectively\footnote{Assigning 0 to the positive cases is to make the target easier to interpret.  If our model is trained to perform regression, a target of e.g. 0.25 indicates how much of the sentence is considered corrupt.}.  Training a CNN with this artificial data set forces the model to learn about the underlying distribution of sequences of words in the data set.  This method can be used to train models other than CNNs and to train with data other than text corpora; in our work, however, we focus solely on CNNs.
+
+%We apply this method to sentence-level CNNs using unlabeled corpora of text.  To obtain an artificial training set, we split the corpus into sentences, call the set of sentences the positive examples, and assign them the label 0.  At training time, we create negative examples either by adding noise to a sentence or replacing the sentence with the output of a probabilistic language model.  The source of the noise can be permuting the words of the sentence within some window, or replacing, deleting, or adding one or more words.  We assign the negative examples the target 1.  Training a network with the artificial supervised training set causes the weights of the network to become attuned to \textit{intra}-sentence regularities in the training data\footnote{See Appendix B for examples.}.  These regularities are discovered in a vector space defined by pre-trained word vectors, which  capture lexical semantics fairly well.  Consequently, the regularities learned by the network are jointly semantic and syntactic.
+
+\subsection{Isolated non-word error correction}
+%\subsection{Optimal CNN architectures}
+
+Proceeding constructively, we next consider the use of ConvNets for isolated non-word error correction.   In a spelling error system, this correction task is comprised of the components \textbf{RETRIEVE} and \textbf{RANK}.  Given a non-word $s \in A^n$, \textbf{RETRIEVE} is responsible for finding a set of real words $w \in V$ such that $s$ is a plausible misspelling of $w$, and \textbf{RANK} is responsible for rearranging the set of retrieved words according to some partial order $\chi: s \in A^n \times w_y \in V \times w_z \in V \to \mathbb{R}$ such that $\chi(s, w_a, w_b) \le \chi(s, w_b, w_a)$ if $w_a$ is a better replacement for $s$ than $w_b$:
+
+The functional forms of the components are
+\begin{align*}
+\textbf{RETRIEVE}: & s \in A^n \to w_1, w_2, \ldots, w_m \\
+\textbf{RANK}: & s \in A^n \times w_1, w_2, \ldots, w_m \to w_{r_1}, w_{r_2}, \ldots, w_{r_m}
+\end{align*}
+where $w_i$ is the $i$-th retrieved word, $m$ is the number of words retrieved, and $w_{r_k}$ is the word in the $k$-th position implied by $\Xi$.  Note that $RANK$ takes both the error $s$ and the set of candidates, which means that the best replacement for a given $s$ may be conditioned on $s$ itself. 
+
+For this task, as with non-word error detection, a ConvNet can function in a binary or a multi-class mode, as shown in Figures \ref{fig:IsolatedNonWordErrorCorrectionBinary} and \ref{fig:IsolatedNonWordErrorCorrectionMulticlass}.  In binary mode, the ConvNet only implements \textbf{RANK}, and \textbf{RETRIEVE} is an external component.  In multi-class mode, it implements both \textbf{RETRIEVE} and \textbf{RANK} in a single component.  An expected advantage of using ConvNets -- regardless of the chosen mode of classification -- for non-word error correction is their ability to detect soft features.  
+
+\begin{figure}
+\centering
+\captionsetup[subfigure]{justification=centering}
+    \begin{subfigure}{\textwidth}
+    \centering
+    \smartdiagramset{border color=none,back arrow disabled=true,set color list={grey!50,grey!50,grey!50,blue!80,grey!50},text width=2cm}
+    \smartdiagram[flow diagram:horizontal]  {\textit{weif},\textbf{RETRIEVE},1.~\textit{waif}\\2.~\textit{wife}\\3.~\textit{lief},\textbf{RANK}\\(ConvNet),1.~\textit{wife}\\2.~\textit{waif}\\3.~\textit{lief}}
+    \caption{When doing isolated non-word error correction, a ConvNet trained in binary classification mode only implements the \textbf{RANK} component.}
+    \label{fig:IsolatedNonWordErrorCorrectionBinary}
+    \end{subfigure}
+    
+    \begin{subfigure}{\textwidth}
+    \centering
+    \smartdiagramset{border color=none,back arrow disabled=true,set color list={grey!50,blue!80,grey!50},text width=2cm}
+    \smartdiagram[flow diagram:horizontal]  {\textit{weif},\textbf{RETRIEVE \\ RANK (ConvNet)},1.~\textit{wife}\\2.~\textit{waif}\\3.~\textit{lief}}
+    \caption{When doing isolated non-word error correction, a ConvNet trained in multi-class classification implements the \textbf{RETRIEVE} and \textbf{RANK} atomically -- that is, as an integrated component.}
+    \label{fig:IsolatedNonWordErrorCorrectionMulticlass}
+    \end{subfigure}
+\end{figure}
+
+In this dissertation we compare ConvNets in both modes to strong baselines using widely-available corpora of spelling errors.  
+
+%The architecture of the CNN we have developed is shown in Figure \ref{fig:cnnarch}.  We are interested in exploring alternative architectures, as there are many architectural options available to the CNN designer.  Some recent work with CNNs is instructive. Kalchbrenner et al introduced a hierarchical CNN for modeling sentences -- the Dynamic Convolutional Neural Network (DCNN) -- and showed it performed well on several data sets \cite{Kalchbrenner2014-tl}.  One baseline against which they evaluated their model was the Time Division Neural Network \cite{Waibel1989-zo}; their model strongly outperformed the TDNN. Kim subsequently showed that a well-regularized TDNN with greater capacity performed as well as the DCNN on several tasks \cite{Kim2014-vy}.  Thus, when doing research with CNNs, it is important to thoroughly explore the model configuration space.  This is a challenge for us, as we have limited computing resources and our models take a long time to run.
+
+\subsection{Contextual non-word error correction}
+%\subsection{Curriculum learning and designing training sets}
+
+\todo[inline]{TODO.}
+
+%Curriculum learning is a method from the machine learning literature whereby one trains a model by starting with simple examples and progressively increasing their difficulty \cite{Bengio2009-ua}. It is particularly pertinent to how one creates negative examples. Unlike the positive examples, which are samples from an existing corpus, the negative examples are \textit{designed}.  In our framework, the system designer may create a sequence of negative examples such that the model finds it initially easy and progressively harder to distinguish them from the positive examples.  When creating negative examples by randomly permuting a window of words in a positive example, for example, the chances that the model will be able to distinguish positive from negative examples increases as the window size increases. This is because permuting a larger window of words results in more ways for the negative example to \textit{strongly differ} from its positive counterpart.  Applying curriculum learning with our method thus implies that creating a sequence of negative examples would start with a large window and progress gradually towards a smaller one.
+
+%Another problem is how to choose positive examples in a way that increases a model's utility on a particular task.  This issue comes up in the problems described in Sections \ref{sec:pcsc} and \ref{sec:pcgr}. 
+
+\subsection{Real-word error correction}
+%\subsection{Sentence classification}
+%\label{sec:pcsc}
+
+\todo[inline]{TODO.}
+
+%In our dissertation research we focus on CNNs trained on sentences. A benefit of this is that the internal state of a CNN's penultimate layer yields a \textit{distributed representation} -- a real-valued vector -- of a sentence.  These representations can be used to train supervised models on particular tasks.
+
+%In order for any model to perform well on a supervised task, it must be trained with appropriate features.  A sentence classification model, for example, may be trained using a bag-of-words feature vector. This would discard the order of words in the sentence.   The distributed representations learned using our method may thus be used to replace or supplement bag-of-words features in order to improve performance on sentence classification tasks.
+
+%In order for the representations to be helpful, it is possible that the model must be trained using positive examples similar to those of the supervised sentence classification data set.  Performance on a question classification task, for instance, might be increased most if the CNN is trained using many questions.  It may be that corpus for training a CNN as a language model must be chosen carefully if optimal performance on a supervised task is desired.
+
+%\subsection{Grammaticality}
+%\label{sec:pcgr}
+
+%The problem of determining the \textit{grammaticality} of sentences was recently proposed \cite{Madnani_undated-zx}.  The data set is a labeled corpus of sentences.  Given a sentence, the task is to predict a binary or ordinal label that denotes, overall, how grammatically correct it is.  The ordinal labels range from 1-4 and their meanings are \textit{incomprehensible} (1), \textit{somewhat comprehensible} (2), \textit{comprehensible} (3), and \textit{perfect} (4).  In the experiments described in \cite{Madnani_undated-zx}, incomplete or cut-off examples received a label of \textit{other} and were dropped before splitting the data set of about 3000 examples into training, validation, and test sets.
+
+%The existing approach uses hand-selected features such as counts of spelling errors, outputs of a probabilistic language model, and whether a sentence can be successfully parsed by a link parser.  We propose to reframe this task as a problem of \textit{designing} a much larger training set that makes a CNN learn to perform the original task. This will require careful selection of data.  A reasonable way to obtain examples of \textit{perfect} sentences is to sample from a corpus of professionally-edited writing.  How to obtain examples for the other catgegories is an open question.  Examples of \textit{incomprehensible} could, for example, be sampled from a probabilistic language model \cite{Okanohara2007-zp}.  How to design examples from the \textit{somewhat comprehensible} and \textit{comprehensible} categories will be more challenging. 
+
+\section{Report summary and organization}
+
+A roadmap of this dissertation is shown in Figure \ref{fig:roadmap}.  We review notation and terminology in Section \ref{sec:notation}.  The research questions that the dissertation addresses are described in Section \ref{sec:questions}.  In Section \ref{sec:review} we review the relevant literature.  We describe our proposed studies in Section \ref{sec:studies}.  Sections \ref{sec:timeline} and \ref{sec:risks} contain the timeline and an assessment of our risks and exposures.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}[>={Latex[scale=3.25]}, node distance=6mm and 20mm, ultra thin]
+  \tikzset{
+    base/.style={draw, align=center, minimum height=8ex, minimum width=8ex, font={\large}},
+    proc/.style={base, rectangle, text width=18em},
+  }
+  \node [proc] (NonWordErrorDetection) {Non-word error detection};
+  \node [proc, below=of NonWordErrorDetection] (IsolatedNonWordErrorCorrection) {Isolated non-word error correction};
+  \node [proc, below=of IsolatedNonWordErrorCorrection] (ContextualNonWordErrorCorrection) {Contextual non-word error correction};
+  \node [proc, below=of ContextualNonWordErrorCorrection] (RealWordErrorCorrection) {Real-word error correction};
+  
+  \draw [->] (NonWordErrorDetection.south) -- (IsolatedNonWordErrorCorrection.north);
+  \draw [->] (IsolatedNonWordErrorCorrection.south) -- (ContextualNonWordErrorCorrection.north);
+  \draw [->] (ContextualNonWordErrorCorrection.south) -- (RealWordErrorCorrection.north);
+  %\draw [->] (kernels) -- (sc.north);
+  %\draw [->] (kernels) -- (gr.north);
+\end{tikzpicture}
+\caption{Roadmap of this dissertation}
+\label{fig:roadmap}
+\end{figure}
+
+\section{Notation and Terminology}
+\label{sec:notation}
+
+\subsection{Notation}
+
+In this dissertation, matrices $\matr{M} \in R^{n \times m}$ are denoted in bold script.  The $i$th row of a matrix $\matr{M}$ is $\matr{M}^{(i)}$, the $j$th column is $\matr{M}_{j}$, and the $j$th entry of the $i$th row is $\matr{M}_{j}^{(i)}$.  An element-wise non-linear transformation is denoted as $\sigma$.  
+
+\subsection{Terminology}
+
+\subsubsection{Neural network}
+
+A neural network is a sequence of non-linear transformations, or \textit{layers}.  Let the $L$ be the number of layers in a network. The layers of a network are labeled $l \in 1 \ldots L$.  A typical layer consists of a linear transformation followed by the element-wise application of a non-linear function.  Conventionally this is represented as $\sigma(\matr{W_l}\matr{x} + b_l)$, where $\matr{W}_l1$ and $b_l$ are the weights and biases of layer $l$, respectively, and $\matr{x}$ is the input.
+
+The weights of a network a usually randomly initialized.  They are then trained by feeding training examples forward through the network, then computing a loss function using the output of the final layer, which is propagated backwards through the layers to change the weights in accordance with their contribution to the loss incurred at the output layer.
+
+\subsubsection{Convolutional neural network (CNN)}
+
+\begin{figure}
+    \centering
+    \input figures/convnet-vertical.tex
+    \caption{A convolutional network}
+    \label{fig:ConvNetVertical}
+\end{figure}
+
+Here we describe the components of a CNN trained for natural language processing tasks.  Such a network has a word embedding layer followed by one or more convolutional and pooling layers.  Those in turn are followed by zero or more fully-connected layers, then an output layer. 
+
+The input to the network is a fixed-width vector representing a sequence of words.  Here we are modeling sentences, so the width of a training example is the number of words in the longest sentence of the training set.  The elements of an input sentence vector are the indices in the vocabulary of the words in the sentence.
+
+\paragraph{Distributed word representations}
+
+Each word in the vocabulary has a corresponding row in the weight matrix of this layer.  Each row thus has a distributed representation of a word.  This layer takes as input a vector of indices into the vocabulary.  Each index is used to look up the distributed representation that occurs at that position in the sentence.  The word representations are then concatenated into a matrix with one column for each position in the sentence and one row for each dimension of the word representation.
+
+Some options available to the network designer are whether to initialize this layer's weights randomly or with pre-trained word representations (e.g. \cite{Mikolov2013-vo}).  If the latter, one must also choose whether to allow the weights to be updated by backpropagation when the network is being trained.
+
+\paragraph{Discrete convolution}
+\label{sec:convlayer}
+
+A convolutional layer consists of one or more \textit{feature maps}.
+With a CNN trained for a natural language processing task, a feature
+map is a 3-tensor.  One of the tensor's dimensions is the number of
+kernels in the feature map.  The other two dimensions are the rows
+and columns of the kernels.  If the number of columns of the kernels
+matches the number of dimensions of the word embeddings, we say that
+the kernel spans the word embeddings.  
+
+The convolutional operation for the $i$th kernel in layer $l$ (assuming only one feature map) is given by
+\begin{equation}
+\sigma(\matr{W}_{l,i} \ast \matr{x} + b_l),
+\end{equation}
+where $\ast$ is the convolutional operation.  
+
+\paragraph{Pooling}
+\label{sec:poollayer}
+
+Convolutional layers are usually followed by a pooling layer (sometimes called a subsampling layer).  The pooling layer takes the maximum value over the region of the output of the convolutional layer.  This reduces the dimensionality of the output of one layer. 
+
+\section{Research questions}
+\label{sec:questions}
+
+\section{Research question 1}
+\label{sec:question1}
+
+\todo[inline]{TODO.}
+
+The detection of spelling errors is the first component in any spelling error system.  It would thus be of interest to understand the characteristics of a ConvNet trained to perform non-word error detection.  To be clear, if the quality of a non-word error detection system is measured by it's ability to mimic the behavior of a dictionary, a ConvNet will almost surely fall short of a dictionary's performance.  A dictionary defines a hard boundary between real- and non-words, whereas a ConvNet defines a soft one.  The soft boundary provided by ConvNets may thus be of enormous value for online applications.  Ensuring that a dictionary includes all of the words in a language is itself a difficult task; maintaining a dictionary to keep up with an ever-changing landscape of proper names and neologisms can be difficult.   A ConvNet error detection component, however, can provide a probability that a token is a real word.  In conjunction with a dictionary, this probability can help an interactive application determine whether a token should be marked as a non-word.  If the probability that the word is a real word is high, but the word is not in the dictionary, the application can save the word as a candidate for adding to the dictionary and opt not to highlight the word as a non-word in the user interface.  Thus, the primary value is an understanding of how a ConvNet can function alongside a conventional dictionary. 
+
+Example: onomatopoeia and spelling ``whoosh'' versus ``whhoooooosh''.
+
+%How does one train a convolutional neural network with an unlabeled corpus such that it becomes a language model?  CNNs are powerful learning architectures that are sensitive to the order of their inputs.  It would thus be of scientific interest to know how they might function as models of language.
+
+Study 1 (Section \ref{sec:study1}) is designed to answer this question.
+
+\section{Research question 2}
+\label{sec:question2}
+
+How well do ConvNets perform at isolated non-word error correction?
+
+
+
+\todo[inline]{TODO.}
+
+%What is the optimal architecture for CNN language models?  Since designer of a CNN has at her disposal many architectural options, this research question is in fact many specific questions.
+
+%Should the the network be flat (with a single convolutonal layer) or hierarchical (with two or more convolutional layers)?  Should the weight matrix of the word embedding layer be initialized randomly or from a pre-trained dictionary of word representations?  Should the weight matrix of the word embedding layer be updated by backpropagation?  If the word representations are fixed, do the network's kernels cover them entirely? How wide should the kernels be?  Should a network be trained with multple kernel widths?  Should one train a network using only one kernel width? A priori, training with a single kernel width would seem to allow the kernels to focus on learning the contrasting features of the distributed $n$-grams of the training data without interference from kernels of other widths.
+
+Study 2 (Section \ref{sec:study2}) is designed to answer this question.
+
+\section{Research question 3}
+\label{sec:question2}
+
+Contextual spelling correction using ConvNets. 
+
+\todo[inline]{TODO.}
+
+%What effects do different kinds of training examples have on the kernels learned by a CNN language model?  The negative examples used by Okanohara and Tsujii \cite{Okanohara2007-zp} were generated by a probabilistic language model.  Those examples would be plausible \textit{locally} and implausible \textit{globally}, depending on the length of the generated sentence.  Do negative examples with those characteristics cause a network's kernels to learn to detect particular kinds of features? Different aspects of language?
+
+%For contrast, consider the characteristics of negative examples generated by randomly permuting the words of positive examples that lie within some variable-sized window.  When the window spans the entire sentence, the negative examples would be both implausible \textit{locally and globally}. When the window is smaller, they would be implausible locally \textit{only within the window} and locally plausible everywhere else. 
+
+%These differences are important because the kernels in a convolutional layer operate on local windows of the input.  We know that the kernels of a CNN language model will tend to specialize in detecting features either of positive or negative examples.  The features on which kernels that specialize in detecting negative examples learn to activate will have some effect on the features learned by the kernels that specialize in detecting positive examples.  Thus a kernel may learn different features of the negative examples depending on the curriculum used for training. It is also possible that the kernels that specialize in positive examples would learn different features depending on the features learned by the other, negative example detecting kernels.
+
+%Further, what can we say about the kernels beyond whether they tend to specialize in positive or negative examples?  Are there ways of visualiizing, inspecting, or probing the kernels that might help us understand better what a kernel has learned?   
+
+Study 3 (Section \ref{sec:study3}) is designed to answer this question.
+
+\section{Research question 4}
+\label{sec:question4}
+
+Real-word error correction using ConvNets.  This includes prepositions, confusable words. 
+
+\todo[inline]{TODO.}
+
+%Training a discriminative convolutional sentence model can be seen as a form of \textit{unsupervised} feature learning.  The process is unsupervised in that the features learned by the network are not guided by a task-specific supervised signal.  The learned features are the regularities that the network's kernels learn to detect.  The output of a network's kernels can be reduced to a single fixed-width vector, which is akin to Latent Semantic Analysis \cite{Deerwester1990-yp} or Topic Models \cite{Blei2012-hn} whereby a variable-length text is distilled  down to a fixed-length real-valued vector.
+
+%Unsupervised representation learning usually does not perform as well as supervised learning.  Nonetheless, we believe a question worth pursuing is how well the representations learned by our model perform on sentence classification tasks.
+
+Study 4 (Section \ref{sec:study4}) is designed to answer this question.
+
+%\section{Research question 5}
+%\label{sec:question5}
+
+%Can CNN language models help improve the detection of sentence \textit{grammaticality} -- the overall correctness of the grammar of a sentence?  Recent work has shown progress towards predicting the grammaticality score of a sentence on an ordinal scale using both simple features such as the number of spelling errors and more complex ones like whether the sentence can be parsed by a link parser \cite{Madnani_undated-zx}.  The predictions of that model are likely correlated to some extent with the predictions of ours.  Does combining the models improve performance? 
+
+%Study 5 (Section \ref{sec:study5}) is designed to answer this question.
+
+\begin{figure}[!hbp]
+\centering
+\begin{tikzpicture}
+  [node distance=.8cm, start chain=going above,]
+  \node[punktchain, join] (intro) {\textbf{Input} \\ Vectors of indices};
+  \node[punktchain, join] (probf)      {\textbf{Lookup table} \\(Word2Vec)};
+  \node[punktchain, join] (investeringer)      {\textbf{Convolutional layer} \\ Multiple feature maps with differently-sized kernels};
+  \node[punktchain, join] (perfekt) {\textbf{Pooling layer} \\ Max pooling over time};
+  \node[punktchain, join, ] (emperi) {\textbf{Output layer (softmax or linear)}};
+\end{tikzpicture}
+\caption{The architecture of our current CNN language model.  The network has Word2Vec word representations in the word embedding layer and performs max pooling through time.}
+\label{fig:cnnarch}
+\end{figure}

@@ -1,0 +1,89 @@
+\begin{tikzpicture}[scale=1,every node/.style={minimum size=1cm,scale=1},on grid]
+    % Sentence matrix.
+    \begin{scope}[yshift=-10, xshift=-120]
+        % Fill the preposition's column with gray.
+        \fill[gray,fill opacity=.75] (1.0,0) rectangle (1.5, 3);
+        
+    	% The grid itself.
+        \draw[step=5mm, black] (0,0) grid (2.5,3);
+        
+        % Label the columns with their corresponding words.
+        \node[label={[rotate=-90]:cat}] at (-0.25,-1) {};
+        \node[label={[rotate=-90]:sat}] at (0.25,-1) {};
+        \node[label={[rotate=-90]:on}] at (0.75,-1) {};
+        \node[label={[rotate=-90]:the}] at (1.25,-1) {};
+        \node[label={[rotate=-90]:mat}] at (1.75,-1) {};
+    \end{scope}
+    
+    \pgfmathsetseed{123321}
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=-5*\shift, xshift=-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 3);
+            
+            % Choose a column to make gray to illustrate where the filter
+            % specialized in prepositions.
+            \pgfmathsetmacro{\column}{random(3)}
+            \fill[gray,fill opacity=.75] (0.5*\column-0.5,0) rectangle (0.5*\column, 3);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (1.5, 3);
+    	\end{scope}
+	}
+    
+    % Convolutional operator (binary function).
+    \begin{scope}[yshift=30.5, xshift=-32.5]
+    	\node {$\ast$};
+    \end{scope}
+    
+    % Function output.
+    \begin{scope}[yshift=30.5, xshift=62.5]
+    	\node {$\to$};
+    \end{scope}	
+    
+    % Output of convolution.
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=30-5*\shift, xshift=95-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 0.5);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (1.5, 0.5);
+    	\end{scope}
+	}
+    
+    % Max pooling output arrow (unary function).
+    \begin{scope}[yshift=30.5, xshift=160]
+    	\node {$\to$};
+    \end{scope}	
+    
+    % Output of max pooling operation.
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=30-5*\shift, xshift=190-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (.5, .5);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (.5, .5);
+    	\end{scope}
+	}
+    
+    % Convolutional brace
+    \begin{scope}[yshift=-50,xshift=-40]
+	    \draw [decorate,thick,rotate=180,decoration={brace,amplitude=10pt}] (-2.85,0.0) -- (2.85,0.0) node [black,midway,yshift=-20,xshift=0]  {Convolution};
+    \end{scope}
+    
+    % Max pooling brace
+    \begin{scope}[yshift=-50,xshift=130]
+	    \draw [decorate,thick,rotate=180,decoration={brace,amplitude=10pt}] (0.0,0.0) -- (1.85,0.0) node [black,midway,yshift=-20,xshift=0]  {Max pooling};
+    \end{scope}
+    
+    % Fixed-width representation brace.
+    \begin{scope}[yshift=-50,xshift=215]
+    	\draw [decorate,thick,rotate=180,decoration={brace,amplitude=10pt}] (0.0, 0.0) -- (1.85, 0.0) node [black,midway,yshift=-26,xshift=0,text width=5cm,align=center] {Fixed-width \\ representation};
+    \end{scope}
+
+\end{tikzpicture}

@@ -1,0 +1,149 @@
+\begin{tikzpicture}[scale=1,every node/.style={minimum size=1cm,scale=1},on grid]
+    % Input sequence to integers. 
+    \begin{scope}
+        % Input sequence
+        \node (cat) at (-2.,-3) {cat};
+        \node (sat) at (-1,-3) {sat};
+        \node (on) at (0,-3) {on};
+        \node (the) at (1,-3) {the};
+        \node (mat) at (2,-3) {mat};
+        
+        % Index vector
+        \node (catidx) at (-2.,-1.5) {1};
+        \node (satidx) at (-1,-1.5) {2};
+        \node (onidx) at (0,-1.5) {6};
+        \node (theidx) at (1,-1.5) {9};
+        \node (matidx) at (2,-1.5) {7};
+        
+        % Arrows from input sequence to index vector.
+        \draw[->] (cat) edge (catidx);
+        \draw[->] (sat) edge (satidx);
+        \draw[->] (on) edge (onidx);
+        \draw[->] (the) edge (theidx);
+        \draw[->] (mat) edge (matidx);
+        
+        % Arrows from index vector to embedding matrix.
+        \draw[->] (catidx) edge (-2.75,0.25);
+        \draw[->] (satidx) edge (-2.25,0.25);
+        \draw[->] (onidx) edge (0.25,0.25);
+        \draw[->] (theidx) edge (2.25,0.25);
+        \draw[->] (matidx) edge (0.75,0.25);
+        
+        % Arrows from embedding matrix to sentence matrix. 
+        \draw[->] (-2.75, 2) edge (-1.25,3.75);
+        \draw[->] (-2.25, 2) edge (-0.75,3.75);
+        \draw[->] (0.25, 2) edge (-0.25,3.75);
+        \draw[->] (2.25, 2) edge (0.25,3.75);
+        \draw[->] (0.75, 2) edge (0.75,3.75);
+    \end{scope}
+    
+    % Embedding matrix
+    \begin{scope}
+        \draw[step=5mm, black] (-3,0) grid (3,2);
+        
+        % Fill the columns selected by the input vector. 
+        % cat
+        \fill[magenta,fill opacity=.5] (-3,0) rectangle (-2.5, 2);
+        % sat
+        \fill[blue,fill opacity=.5] (-2.5,0) rectangle (-2, 2);
+        % on
+        \fill[green,fill opacity=.5] (0.0,0) rectangle (0.5, 2);
+        % the
+        \fill[red,fill opacity=.5] (2,0) rectangle (2.5, 2);
+        % mat
+        \fill[yellow,fill opacity=.5] (0.5,0) rectangle (1.0, 2);
+    \end{scope}
+    
+    % Sentence matrix.
+    \begin{scope}[xshift=-15,yshift=100]
+        % Fill the preposition's column with gray.
+        %\fill[gray,fill opacity=.75] (0.0,0) rectangle (0.5, 2);
+    	% The grid itself.
+    	
+        \draw[step=5mm, black] (-1,0) grid (1.5,2);
+        
+        % Fill the columns selected by the input vector. 
+        % cat
+        \fill[magenta,fill opacity=.5] (-1,0) rectangle (-0.5, 2);
+        % sat
+        \fill[blue,fill opacity=.5] (-0.5,0) rectangle (-0, 2);
+        % on
+        \fill[green,fill opacity=.5] (0.0,0) rectangle (0.5, 2);
+        % the
+        \fill[red,fill opacity=.5] (0.5,0) rectangle (1, 2);
+        % mat
+        \fill[yellow,fill opacity=.5] (1,0) rectangle (1.5, 2);
+    \end{scope}
+    
+    \pgfmathsetseed{123321}
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=225-5*\shift, xshift=-15-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 2);
+            
+            % Choose a column to make gray to illustrate where the filter
+            % specialized in prepositions.
+            \pgfmathsetmacro{\column}{random(3)}
+            \fill[green,fill opacity=.5] (0.5*\column-0.5,0) rectangle (0.5*\column, 2);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (1.5, 2);
+    	\end{scope}
+	}
+    
+    % Convolutional operator (binary function).
+    %\begin{scope}[yshift=50, xshift=-32.5]
+    %	\node {$\ast$};
+    %\end{scope}
+    
+    % Function output.
+    %\begin{scope}[yshift=80, xshift=62.5]
+    %	\node {$\to$};
+    %\end{scope}	
+    
+    % Output of convolution.
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=335-5*\shift, xshift=-15-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 0.5);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (1.5, 0.5);
+    	\end{scope}
+	}
+    
+    % Max pooling output arrow (unary function).
+    %\begin{scope}
+    %	\node {$\to$};
+    %\end{scope}	
+    
+    % Output of max pooling operation.
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=400-5*\shift, xshift=5-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (.5, .5);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (.5, .5);
+    	\end{scope}
+	}
+    
+    % Convolutional brace
+    %\begin{scope}
+	%    \draw [decorate,thick,decoration={brace,amplitude=10}] (-5,0) -- (-5,8) node [black,midway,yshift=0,xshift=-50]  {Convolution};
+    %\end{scope}
+    
+    % Max pooling brace
+    %\begin{scope}
+	   % \draw [decorate,thick,decoration={brace,amplitude=10}] (-5,10) -- (-5,12) node [black,midway,yshift=0,xshift=-50] {Max pooling};
+    %\end{scope}
+    
+    % Fixed-width representation brace.
+    %\begin{scope}
+    %	\draw [decorate,thick,decoration={brace,amplitude=10}] (-5,13) -- (-5, 15) node [black,midway,yshift=0,xshift=-50,text width=5cm,align=center] {Fixed-width \\ representation};
+    %\end{scope}
+
+\end{tikzpicture}

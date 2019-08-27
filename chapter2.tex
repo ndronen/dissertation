@@ -1,0 +1,182 @@
+\chapter{Literature Review}
+\label{chap:LiteratureReview}
+
+\section{Spelling error detection and correction}
+
+\todo[inline]{TODO.}
+
+\section{CNN language models}
+
+Our method for training CNNs as language models has a number of notable
+precedents.  The most important ones are the work of Okanohara and
+Tsujii on training language models with what they call pseudo-negative
+examples \cite{Okanohara2007-zp} and the CNN architecture of Collobert
+and Weston \cite{Collobert2008-su}.
+
+Okanohara and Tsujii train a discriminative language model as a binary
+classifier using real sentences as positive examples and sentences sampled
+from a probabilistic lanugage model as negative ones.  The negative
+examples are sentences that are locally plausible and globally extremely
+unlikely.  We generalize the procedure of \cite{Okanohara2007-zp}
+by considering negative examples as a curriculum \cite{Bengio2009-ua}
+that can change as the model improves.  Collobert and Weston defined
+what is essentially the reference architecture for CNNs for natural
+language processing.  Our current architecture is identical to theirs,
+with exceptions noted below.  Other language modeling work has been
+influenced by Okanohara and Tsujii \cite{Sandbank2008-ow} and Collobert
+and Weston \cite{Xu2012-ci}.
+
+Language models learn the probability distribution of the next word given
+the previous $T$ words \begin{equation} \hat{P}(w_{1}^T) = \prod{t=1}^{T}
+\hat{P}(w_t | w_{1}^{t-1}), \end{equation} where $t$ is the $t$-th word
+of the sequence and $w_{i}^j = (w_i, w_{i+1}, \ldots, w_{j})$.  Neural
+network language models \cite{Bengio2003-lk,Mikolov2011-pe,Mikolov2013-hm}
+have been shown to be very effective at this task.  In the usual
+supervised setup, the training set consists of a set of training examples
+$X$ and a set of corresponding labels $y$ that is distinct from $X$.
+As in the supervised set up, a language model is penalized during training
+according to the errors it makes.  Unlike the supervised set up, the
+language model is trained to predict the next item in the training input.
+The source of the supervised signal is thus the training input itself, not
+an out-of-band label.  Using our method, the supervised signal identifies
+whether (classification) or to what extent (regression) a training example
+is a sample from the underlying distribution of the training data.
+The effect is similar: the network is forced to discover the features
+of the input that allow it to distinguish real from imaginary samples.
+
+An important aspect of neural network language models is that in addition
+to learning an estimate of the probability of a sequence of words, something
+that all proper language models do, they also learn a distributed
+representation of each word in the training vocabulary.  Learning
+distributed word representations is sometimes called \textit{embedding
+learning}.  There are several methods for learning embeddings
+\cite{Bengio2003-lk,Mnih2008-nf,Collobert2008-su,Mikolov2011-pe,JeffreyPennington2014-fc}.
+The focus of this prior work has been on word representations; the
+focus of our work is representations of larger units of meaning.  The
+architecture we use in our investigation is identical in most respects to
+the Time Delay Neural Network employed by Collobert and Weston
+\cite{Collobert2008-su}, except the input to our network is word
+representations learned by Word2Vec (this architecture was used
+by Kim, but for supervised learning with CNNs \cite{Kim2014-vy}).
+
+\todo[inline]{Devote some space to \cite{kim2015character}.}
+
+\section{Additive noise as a regularizer}
+
+Adding small amounts of noise to training examples is a way of increasing
+the generalizability of networks trained with a small amount of data
+\cite{Hammadi1998-kf,Grandvalet1997-qc,Grandvalet1995-tu,Bishop1995-ry,Reed1995-nh,Matsuoka1992-ee,Holmstrom1992-tm,Sietsma1991-ks}.
+If the quality and quantity of the noise is appropriate, adding noise can
+be seen a way of generating new examples.  The use of this method by no
+means guarantees that a network will generalize better.  Determining the
+quality and quantity of noise requires some expertise.  Similarly, our
+method also requires a carefully chosen curriculum.  A key difference
+between training a supervised model with additive noise and our method
+is that out method involves creating a new target variable that is
+intended to force the network only to learn the underlying distribution
+of the training examples.  When training with additive noise, the target
+variable remains the original, domain-specific target variable of the
+supervised data set.
+
+\section{Unsupervised pre-training}
+
+Unsupervised pretraining of the layers of a neural network
+was discovered in recent years as a technique for initializing
+a network -- particularly, one with several hidden layers --
+to a state that made optimization of the entire deep network
+easier when it was subsequently trained in a supervised fashion
+\cite{Hinton2006-mm,Hinton2006-rt,Erhan2010-mu,Larochelle2009-ml,Bengio2007-jn,Rifai2011-ng}.
+More recent discoveries have shown that unsupervised pretraining is not
+necessary when the training set size is large.  Unsupervised pretraining
+is now considered to be useful only when training deeper nets with
+smaller data sets.  With enough data, the underlying distribution of the
+data $P(X)$ can be learned in conjunction with learning the conditional
+distribution $P(y | X)$.  With less data, unsupervised pretraining helps
+make it easier to learn $P(y | X)$ by first learning a reasonable estimate
+of $P(X)$.
+
+At the time when research energy was focused on unsupervised pretraining,
+denoising autoencoders were introduced \cite{Vincent2008-yj}.
+An autoencoder is a neural network with one hidden layer that is trained
+to reconstruct its input.  The input and output layers have the same
+size.  The hidden layer is responsible for encoding the input and the
+job of the output layer is to decode it.  After the network is trained,
+the output layer is discarded and the output of the autoencoder becomes
+simply encoding.  A good encoding is one that preserves the essential
+features of the input.  If, however, the encoding layer is larger than the
+input -- a technique sometimes used in computer vision -- the encoding
+layer can simply memorize the inputs.  The denoising autoencoder is a
+solution to this problem.  By corrupting the inputs before they reach the
+encoding layer, the encoding layer becomes unable to memorize the inputs
+and forced to focus on its essential features.  Our method is very much
+like this, except that the network is trained not to reconstruct a noisy
+input but to predict whether an input is real or imagined.  Curriculum
+learning approaches to training autoencoders with noise that varys over
+time have been introduced \cite{Geras2014-fp,Chandra2014-et}.
+
+\section{Unsupervised training of CNNs}
+
+The max pooling operation is the primary difficulty of training CNNs in
+an unsupervised manner.  In its simplest form, it discards all but one
+output of the convolutional operation of a kernel.  Location information
+disappears, so it's not possible to identify the location in a sentence,
+for example, that resulted in the pooling operation's output.
+
+Prior work on this problem with CNNs has been done in computer vision.
+By employing sparse outputs and by reversing the convolutional
+operation, convolutional autoencoders lessen the effect of the
+loss of information that results from pooling \cite{Masci2011-hh}.
+A convolutional autoencoder can be trained in an unsupervised manner;
+images are input to the network and the training error is determined by
+the network's ability to reconstruct the input.  A different approach
+is taken by deconvolutional networks \cite{Zeiler2010-gf}, which address
+the problem of information loss by adding an out-of-band pooling map to
+the network.  The pooling map enables some restoration information lost.
+A deconvolutional network can also be trained in an unsupervised manner.
+
+In the natural language processing domain, as mentioned in the previous
+section, training a CNN on an unlabeled data set by creating negative
+examples has been done to good effect \cite{Collobert2008-su}.  There are
+a few notable differences between their approach and ours.  Our output
+layer is a softmax (classification) or linear (regression) layer with
+their usual cost functions; for language modeling, their cost function
+is a ranking function.  They used unlabeled data to train their CNN
+to learn word embeddings, which they then used for training supervised
+CNNs on other tasks.  The focus on learning word embeddings is a focus
+on \textit{semantics}.  Our focus is on using unlabeled corpora to
+learn convolutional kernels, embeddings which capture elements of both
+\textit{semantics} and \textit{syntax}.
+
+\section{Supervised CNNs for natural language processing tasks}
+
+Following the seminal work of Collobert and Weston
+\cite{Collobert2008-su}, a number of applications of CNNs to natural
+language processing tasks have been reported in recent years.  The
+emphasis of the majority of them appears to be on improving predictive
+performance on various data sets.  Kalchbrenner et al report good results
+using a hierarchical CNN -- one with more than one convolutional layer
+-- with dynamic $k$-max pooling on question classification, sentiment
+classification, and some other predicitive tasks \cite{Kalchbrenner2014-tl}.
+Dynamic $k$-max pooling extends the max pooling operation in two respects.
+First, the pooling operation outputs the $k$ greatest outputs of a
+convolutional kernel.  Second, $k$ is a function of the length of the
+input sentence and the height of the layer in the network where the
+pooling operation is performed.  This increases the network's ability to
+connect distant but important words or sequences of words.
+
+Another work uses a network architecture similar to that of Collobert and
+Weston \cite{Kim2014-vy}, except the inputs to the network are Word2Vec
+vectors.  Johnson and Zhang use sparse one-hot word representations
+as inputs and describe experiments with sentiment classification and
+document classification data sets \cite{Johnson2014-ol}.
+
+The recent hybrid CNN-RNN network for modeling discourse allows supervised
+models of more abstract semantic structures \cite{Kalchbrenner2013-kz}.
+The CNN is trained at the sentence level and the RNN at the discourse
+level.  Both models are trained using a supervised data set.
+The output of the final hidden layer of the RNN yields distributed
+discourse representations.  They report that the neighborhoods of a
+small random sample of discourse representations tend to be pure; the
+4-nearest neighbors of the sampled representations are of the same class.
+The model of \cite{Kalchbrenner2014-tl} is re-used as a model of documents
+in \cite{Denil2014-dx}.

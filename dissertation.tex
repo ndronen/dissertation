@@ -1,0 +1,146 @@
+\documentclass[defaultstyle,11pt]{thesis}
+
+\usepackage{textcomp}
+\usepackage{pdfpages}
+\usepackage[style=authoryear,citestyle=alphabetic,sorting=nty,backend=bibtex]{biblatex}
+\addbibresource{bibliography.bib}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % load a font with all the characters
+\usepackage{amssymb}		% to get all AMS symbols
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{float}
+\usepackage{stfloats}
+\usepackage{graphicx}		% to insert figures
+\usepackage{todonotes}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{tikz}
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,decorations.pathreplacing,decorations.pathmorphing,shapes,matrix,shapes.symbols,arrows.meta,backgrounds}
+\usepackage{smartdiagram}
+
+\tikzset{
+>=stealth',
+  punktchain/.style={
+    rectangle,
+    rounded corners,
+    % fill=black!10,
+    draw=black, very thick,
+    text width=10em,
+    minimum height=3em,
+    text centered,
+    on chain},
+  line/.style={draw, thick, <-},
+  element/.style={
+    tape,
+    top color=white,
+    bottom color=blue!50!black!60!,
+    minimum width=8em,
+    draw=blue!40!black!90, very thick,
+    text width=10em,
+    minimum height=3.5em,
+    text centered,
+    on chain},
+  every join/.style={->, thick,shorten >=1pt},
+  decoration={brace},
+  tuborg/.style={decorate},
+  tubnode/.style={midway, right=2pt}
+}
+
+\newcommand{\matr}[1]{\mathbf{#1}} % undergraduate algebra version
+%\newcommand{\matr}[1]{#1}          % pure math version
+%\newcommand{\matr}[1]{\bm{#1}}     % ISO complying version
+
+%%%%%%%%%%%%   All the preamble material:   %%%%%%%%%%%%
+
+\title{Correcting Writing Errors with Convolutional Neural Networks}
+
+\author{Nicholas~A.}{Dronen}
+
+\otherdegrees{B.A., Moorhead State University, 1993 \\
+	      M.S., University of Colorado, 2006}
+
+\degree{Doctor of Philosophy}		%  #1 {long descr.}
+	{Ph.D., Computer Science}		%  #2 {short descr.}
+
+\dept{Department of}			%  #1 {designation}
+	{Computer Science}		%  #2 {name}
+
+\advisor{Prof.}				%  #1 {title}
+	{James~H.~Martin}			%  #2 {name}
+	
+\reader{Prof.~Peter~W.~Foltz}        % 2nd person to sign thesis
+
+%\reader{Prof.~Martha Palmer}		%  2nd person to sign thesis
+
+\abstract{  \OnePageChapter	% because it is very short
+
+	Often the abstract will be long enough to require
+	more than one page, in which case the macro
+	``$\backslash$OnePageChapter'' should {\it not}
+	be used.
+
+	But this one isn't, so it should.
+	}
+
+\dedication[Dedication]{To Cheng-Hsi and Coraline, for their patience and forebearance during the many years I spent preparing to do this work.}
+
+\acknowledgements{	\OnePageChapter	% *MUST* BE ONLY ONE PAGE!
+	Here's where you acknowledge folks who helped.
+	But keep it short, i.e., no more than one page,
+	as required by the Grad School Specifications.
+	}
+
+\ToCisShort	% use this only for 1-page Table of Contents
+
+\LoFisShort	% use this only for 1-page Table of Figures
+% \emptyLoF	% use this if there is no List of Figures
+
+\LoTisShort	% use this only for 1-page Table of Tables
+% \emptyLoT	% use this if there is no List of Tables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%       BEGIN DOCUMENT...         %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input macros.tex
+% Introduction and research questions
+\input chapter1.tex
+% Literature review
+\input chapter2.tex
+% Proposed studies
+\input chapter3.tex
+% Spelling error detection.
+\input chapter4.tex
+% Isolated non-word error correction.
+\input chapter5.tex
+% Contextual non-word error correction.
+\input chapter6.tex
+% Contetxual real-word error correction (prepositions and others).
+\input chapter7.tex
+
+%\bibliographystyle{plain} % or "siam", or "alpha", etc.
+%\nocite{*}    % list all refs in database, cited or not
+%\bibliography{bibliography}   % Bib database in "refs.bib"
+\printbibliography
+
+%%%%%%%%% then the Appendices, if any %%%%%%%%%
+%\appendix
+%\input appendixA.tex
+%\input appendixB.tex
+%\input appendixC.tex
+
+\end{document}
+
+
+

@@ -1,0 +1,541 @@
+\chapter{Correcting Preposition Errors with Convolutional Networks and Contrasting Cases}
+\label{chap:CorrectingPrepositionErrors}
+
+%\documentclass[11pt,letterpaper]{article}
+%\usepackage{naaclhlt2016}
+
+%\section{Correcting Preposition Errors with Convolutional Networks and Contrasting Cases}
+%\label{sec:PrepositionIntroduction}
+
+Grammatical error detection and correction are key components of many educational applications.  \textit{Detecting} errors is useful in writing evaluation systems, such as automated essay scoring, particularly when the number and kind of grammatical errors contribute to the score.  Automatically \textit{correcting} errors increases the utility of interactive applications.  An interactive writing tutoring system, for example, may have an error correction module that shows a learner how to improve their writing by suggesting how to correct errors it has detected.
+
+Detection and correction of grammatical errors that are a function of single word choice -- such as article selection, preposition selection, confusable words, and real-word spelling errors --  can be performed by an $n$-way classifier that predicts the correct word $\text{w}_{pred} \in C$ given some input word $\text{w}_{actual} \in C$, where $C$ is a confusion set and $n = |C|$.  Error detection is performed by reducing the $n$-way classifier to a binary classifier; if $\text{w}_{pred}$ and $\text{w}_{actual}$ differ, the model is said to have detected an error.  A writing tutoring system -- to continue with the previous application example -- can highlight a \textit{detected} error, thereby giving the learner an opportunity to correct it.  If the learner needs further assistance, the system can present $\text{w}_{pred}$ to the learner as a proposed correction or provide additional directed training\footnote{In the remainder of this paper, we will use \textit{correction} to refer to both detection and correction, except when required for clarity.}.  
+
+\section{Feature Engineering Versus Learning}
+
+To date, the development of systems for correcting preposition errors has involved \textit{feature engineering}, which is the process of designing and implementing modules that transform \textit{raw} data into information-rich values that can be input to a statistical model in order to perform some task.  Such features are not necessarily engineered from scratch; they may be the output of some other system, such as a part-of-speech tagger or a parser.  A preposition error correction model may, for instance, be trained with a feature set that includes a window of tokens centered on a preposition, their corresponding part-of-speech tags, WordNet attributes, and other engineered features.  The number of features in published descriptions of systems ranges from about 25   \cite{han2004detecting,chodorow2007detection,tetreault2008native,tetreault2008ups,han2010using,tetreault2010using} to more than 300  \cite{de2007automatically}.
+%rozovskaya2014building}.
+Parsing (``deep'') and $n$-gram (``shallow'') approaches have been compared using an artificial corpus of errors \cite{wagner2007comparative}.  To be clear, not all of the features used in these systems require feature engineering, properly speaking.  Indeed, the tokens in the window around the preposition can be considered \textit{raw} data.
+
+An alternative to feature engineering is \textit{feature learning}.  In this approach, raw data are input directly to a statistical model.  The model itself contains set of parameters structured according to prior knowledge about the domain.  For a natural language processing task such as preposition correction, one set of parameters may represent the words in the model's vocabulary, and a higher-order set of parameters may represent sequences of words.  Implicit in this approach  is the assumption that, for supervised learning tasks, there is enough information in the raw inputs \textit{alone} to learn a good mapping from the inputs to the target variable.  
+%Indeed, recent results have demonstrated that feature learning can result in high accuracy on complex tasks \todo{Cite semantic role labeling, sentiment classification, \cite{chen2015semantic}}.
+
+A notable difference between feature engineering and feature learning is the way raw inputs -- sequences of tokens -- are represented.  Commonly, in a feature engineering setting, a single token is represented using an \textit{indicator} or \textit{one-hot} vector.  A one-hot vector has one element for every word in the vocabulary; the element corresponding to the token's type is 1, and all other elements are 0.  In a feature learning setting, by contrast, a word is often represented as a real-valued vector -- a \textit{distributed word representation} or \textit{embedding}.
+
+One-hot word representations have a significant deficiency: they preclude the \textit{distributional hypothesis} \cite{firth1957synopsis}, which states, in effect, that similar words will be found in similar contexts.  With one-hot representations, feature vectors are disjoint and permit no variance in similarity; the one-hot representations for \textit{doctor} and \textit{physician} are just as similar as those of \textit{paintbrush} and \textit{catapult}. With distributed embeddings, however, \textit{doctor} is geometrically near \textit{physician}. Consequently, distributed word embeddings may help supervised models generalize better because they allow the model to learn to detect approximate, fuzzy patterns.  Using word embeddings, a model trained with a data set that contains several occurrences of a phrase -- for instance, ``Frog ate lunch'' -- may also be able to detect similar but previously unseen phrases, such as ``Toad ate breakfast'', solely because of the Frog-Toad and lunch-breakfast similarities.
+
+Recent results have demonstrated that neural networks equipped with feature learning layers can achieve high accuracy on very complex tasks \cite{NIPS2012_4824,graves2013speech}.
+%\todo[inline]{Introduce \textit{word embeddings} or \textit{distributed word representations}.  If they indeed help generalization, training with a smaller number of examples should yield a model of comparable performance.  Mention the number of training examples used in other works.} 
+%\todo[inline]{Segue from feature learning to neural networks.}
+%The output layer for neural network classifiers is typically the softmax, which is quite similar to a maximum entropy model \cite{klein2003maxent}.  
+%A deep neural network can typically learn more complex functions more efficiently than shallow ones with the same number of parameters \cite{bengio2007scaling,Hastad1987,Allender1996} and can easily employ \todo{Define \textit{continuous word representations.}} continuous word representations that are known to improve performance on previously unseen examples.  
+%These are desirable properties for any statistical machinery one might employ to try to separate possibly inseparable classes like the preposition errors we consider here.
+This paper presents results from studies that bring neural networks to bear on the problem of grammatical error correction.  Their purpose is to determine whether a feature learning approach is sufficient to achieve performance comparable to previously-reported results on native writing.
+
+This investigation is limited to preposition selection errors resulting from the incorrect choice from the confusion set $C$ of nine common prepositions -- namely, ``at'', ``by'', ``for'', ``from'', ``in'', ``of'', ``on'', ``to'', and ``with''.  In the concluding section of this paper, we discuss extending the approach presented here so it can be evaluated on corpora of learner errors, which in addition include extraneous and missing preposition errors.  This work nonetheless may generalize to other word selection tasks, such as correcting confusable words and real-word spelling errors (e.g. \textit{except}/\textit{accept}, \textit{quiet}/\textit{quite}) \cite{kukich1992techniques}.
+
+\section{ConvNets with Contrasting Cases}
+
+In our experiments, we train convolutional neural networks (ConvNets) \cite{LeCun98,collobert2008unified} to correct preposition errors using a corpus of \textit{contrasting cases}, a concept from educational research.  In the contrasting cases literature, it is argued that comparison of examples ``support[s] transfer by helping people abstract the key features of the method so that it is not tied to overly narrow problem features'' \cite{rittle20117}.  Contrasting cases function in a similar manner for our models.  In our approach, a contrasting case is a pair of examples.  One is a real sentence from some corpus; the other is the same sentence in which the preposition in the position being considered has been replaced by a randomly-selected preposition from the confusion set.  The artificial examples in our corpus help the model generalize by preventing it from learning a trivial solution to the problem (i.e. predicting that the correct preposition is whatever the input preposition happens to be) by forcing it to condition its outputs on the preposition's context.  
+
+Our use of contrasting cases follows a tradition in the natural language processing and machine literature of using noise intelligently to learn a task.  In one study, a probabilistic language model was used to generate negative examples for training a discriminative language model   \cite{tsujiiythu2007discriminative,cherry2008discriminative}. Bergsma et al. \cite{bergsma2008discriminative} used pointwise mutual information to choose negative examples for learning selectional preference using a support vector machine.  A more recent contribution, noise contrastive estimation (NCE) \cite{gutmann2010noise}, allows one to estimate the parameters of a computationally expensive or intractable probability density function by training a model to distinguish between the data and artificial noise.  NCE has been used to train language models \cite{ICML2012Mnih_855} and to efficiently learn word embeddings \cite{mnih2013learning,NIPS2013_5021}.
+
+In this work, we train models using a single encyclopedia -- either Wikipedia or Microsoft Encarta 98 -- and we evaluate the model using held-out examples from the same corpus.  We also investigate our Wikipedia model's ability to generalize to out-of-domain data by evaluating it on examples from several 19th and early 20th century fiction and non-fiction books.  Finally, we compare our feature learning approach to the performance of human annotators on the same task.  
+
+%The rest of this paper is organized as follows.  In Section \ref{sec:PrepositionCorpora}, we explain the process for constructing our training corpus.  Our modeling approach is explained and motivated in Section \ref{sec:PrepositionModel}.  Section \ref{sec:PrepositionExperiments} describes our experiments and results, including the results of the human preposition judgments we obtained for this study.  Section \ref{sec:PrepositionRelated} discusses related work and Section \ref{sec:PrepositionConclusion} concludes. 
+
+\section{Corpora}
+\label{sec:PrepositionCorpora}
+
+The first corpus we used for training was the 20140903 dump of English Wikipedia\footnote{\url{https://meta.wikimedia.org/wiki/Data\_dump\_torrents}}.  We preprocessed the dump using WikiClean\footnote{\url{https://github.com/lintool/wikiclean}}, which strips most markup and other extraneous text from the dump.  
+
+After sentence segmentation, the sentences were subjected to a number of exclusionary steps.  To reduce the number of incorrectly segmented sentences, we excluded those without initial capitalization and terminating punctuation.  To reduce data leakage from the training set, we excluded near-duplicate sentences from the U.S. Census that appear in multiple articles (e.g. ``The median income for a household...'').  
+
+
+Finally, we eliminated sentences with fewer than 5 or more than 50 tokens (including punctuation) or that had none of the prepositions in our confusion set.  Finally, we lower-cased all tokens and converted each digit character to the string ``digit''.  All punctuation was preserved.  The steps described in this paragraph were also applied to the other corpora described in this section. 
+
+%To obtain labels for training a discriminative model, we passed a part-of-speech tagged version of each sentence in the corpus through a grammatical error generation tool \cite{foster2009generrate}.  
+
+%If, for instance, ``with'' occurs in a sentence, the tool emitted nine new sentences, each containing one of the other prepositions in place of ``with''.  Continuing with the example, the label of each sentence was set to ``with'', the preposition at the given position in the original sentence.  This created a large number of derived sentences.  Each input sentence S caused the tool to output $(|C| - 1)|S_p|$ sentences, where $S_p$ is the set of prepositions in the sentence.
+%Randomly sampling a single error-containing sentence from the set of derived sentences would yield a distribution of targets proportional to the distribution of prepositions in the corpus.  Such a distribution would be severely imbalanced.  To avoid this, we sampled the derived sentence containing the error with the least cumulative frequency at that point in the sampling process.
+
+%\begin{figure*}
+%\centering
+%\input{convnet.tex}
+%\caption{Example of a convolutional network taking a window of five words centered on a preposition.  The phrase "cat sat on the mat" is represented to the model as a sequence of distributed word representations.  The filters -- five of them, each of width three -- are convolved over the word representations.  Here the discrete convolution operator is denoted as $\ast$.  The convolution of one filter over the input outputs a scalar for each position at which the filter is applied.  Max pooling is then performed over the resulting vectors to reduce each filter's variable-width output to a scalar.  The gray filter columns illustrate where the filters hypothetically have learned to detect particular prepositions.  TODO: rewrite the caption using $l$, $d$, $n$, and $f$ parameters.} 
+%\label{fig:Convolution}
+%\end{figure*}
+
+Using the remaining sentences, we created a corpus of contrasting cases.  For each sentence in the corpus, we replaced one of the prepositions with another randomly-selected preposition from the confusion set.  If a sentence contained more than one preposition, we chose to replace the one that had occurred least frequently up to that point in the process.  This resulted in a less imbalanced distribution in the target variable.  The end result was a set of 170m sentences (85m contrasting cases), an example of which can be seen in Table \ref{tab:Contrasting}.  After shuffling the sentences, we allocated 75m (37.5m contrasting cases) for training, and 1m (500k contrasting cases) each for validation and test.  
+
+\begin{table}[H]
+\begin{tabular}{cc}
+\textbf{Sentence} & \textbf{Target} \\
+\toprule
+This is justified \textbf{on} policy grounds. & \textbf{on} \\
+This is justified \textbf{for} policy grounds. & \textbf{on} \\
+\bottomrule
+\end{tabular}
+\caption{A contrasting case.  The first row is a sentence from the ``Attorney-client privilege'' Wikipedia article.   The second row is the same sentence with the preposition \textbf{on} replaced by a randomly-selected preposition (here \textbf{for}).  The target column indicates what a model would be trained to predict when presented the example.} 
+\label{tab:Contrasting}
+\end{table}
+
+\begin{table*}
+\centering
+\begin{tabular}{ccc}
+\textbf{Window} & \textbf{Target} & \textbf{Model input} \\
+\toprule
+is justified \textbf{on} policy grounds & \textbf{on} & [10, 99, \textbf{1}, 72, 86 ] \\
+is justified \textbf{for} policy grounds & \textbf{on} & [10, 99, \textbf{4}, 72, 86 ] \\
+\bottomrule
+\end{tabular}
+\caption{Width-5 windows of a contrasting case (cf. Table \ref{tab:Contrasting}) and corresponding model inputs, assuming that the indices of ``on'' and ``for'' in the vocabulary are 1 and 4, respectively.  The window size here is only for purposes of illustration; we consider and evaluate multiple window sizes in Section \ref{sec:PrepositionExperiments}, including the entire sentence.}
+\label{tab:Windows}
+\end{table*}
+
+The other corpus we used for training was Microsoft Encarta 98, which is included in the Microsoft Research Question-Answering Corpus \footnote{\url{http://research.microsoft.com/en-us/downloads/88c0021c-328a-4148-a158-a42d7331c6cf/}}.  The sentences in the corpus were already segmented.  Unlike the Wikipedia corpus, where we considered only one preposition per sentence, with Encarta we considered all prepositions in our confusion set.  Using a subset of $\sim$1250k preposition contexts, we allocated 300k for train, 50k for validation, and the remaining $\sim$900k for test.  From the 300k training contexts, we created contrasting cases, yielding 600k examples.  Since we wished to determine how well the model performs with relatively few training examples, we we opted only to use 300k examples (150k contrasting cases) out of those 600k for training.  For consistency with previous work \cite{gamon2008using,tetreault2008native}, we used only real examples for validation and test. 
+
+For out-of-domain evaluation, we obtained eight books from Project Gutenberg \footnote{\url{https://www.gutenberg.org/}}.  Before sentence segmentation, we removed the Project Gutenberg header and footer from each book.
+
+The vocabularies for the models described in Section \ref{sec:PrepositionExperiments} were selected from the training sets.  A word in the vocabulary had to occur at least 5 times in the training set and the vocabulary was not allowed to exceed 100k words.  The Wikipedia-based model vocabulary came from the first 1m of the 75m examples in the training set.  The size of the Wikipedia and Encarta vocabularies were 83064 and 40659 words, respectively.  Out-of-vocabulary words were replaced with an ``unknown word'' token. 
+
+\section{Modeling} 
+\label{sec:PrepositionModel}
+
+%In this section we provide a motivation for using convolutional networks to correct preposition errors, and we outline our approach to the task.  
+
+We use a ConvNet architecture commonly applied to natural language processing tasks \cite{collobert2008unified,kim2014}.  In this architecture, a ConvNet has (1) a word embedding layer, (2) a temporal convolutional layer containing a set of filters, (3) a max pooling layer for reducing the variable-width convolutional output to a fixed width, and (4) a sequence of one or more fully-connected layers.  Specifics about the hyperparameters of our models, which employ this general architecture, are provided in Section \ref{sec:PrepositionExperiments}.  The computational mechanics of ConvNets are covered well in the original ConvNet paper \cite{LeCun98}. 
+
+An advantage of ConvNets is that they can be trained to model precise sequential patterns.  Consider a ConvNet trained using examples that are fixed-width windows centered on any of the prepositions in our confusion set. Assume for simplicity that the filters are the same width as the model's input.  During training, the word embedding layer and the filters in the convolutional layer collude to find a good configuration.  In the embedding layer, prepositions are pulled apart or pushed together depending on where the convolutional layer needs them to be in order to reduce the model's cost.  In the convolutional layer, certain filters are guided to specialize in certain prepositions and their contexts; the middle component of each filter will be led to activate more highly on certain prepositions and the other components will learn to detect patterns that occur in the fixed-width window around the prepositions.  Thus, from a feature learning perspective, ConvNets are appropriate for preposition error correction.
+
+We train our models with many more parameters than examples; this increases the risk of overfitting.  Indeed, in this regime a model can learn the trivial solution, which is to ignore a preposition's context and predict whatever preposition happens to be present.  To solve this problem, some regularization is necessary.  Instead of regularizing the model's parameters using a technique such as weight decay or dropout \cite{hinton2012improving}, we regularize the training examples.  Our use of contrasting cases prevents the model from learning a trivial solution by forcing it to pay attention to the context.  Since a contrasting case has one artificial example for every real example, the model can easily attain an accuracy of .5 by learning the trivial solution.  Both examples in a contrasting case have the same target variable, and their inputs differ only by one preposition, so further gains in accuracy can only be achieved by paying attention to the context.
+
+Concretely, consider the fixed-width windows of the constrasting case in Table \ref{tab:Windows}.  If a model is trained with only real examples, the convolutional filters can learn to detect the ``on'' at the center of the window and to pass that information on to the higher layers of the network.  This trivial solution fails for the artificial example, because copying the center word is guaranteed to result in an incorrect prediction.  The artificial examples thus force the model to condition itself on the non-obvious parts of the inputs. 
+
+\iffalse
+Probabilistic language models (PLMs) estimate the probability of a word given its context \todo{Needs formal definition.}.  They are most often trained with a context that spans a small window (i.e. with $n$-grams, for some size $n$), because the frequency of $n$-grams decreases vanishingly as $n$ increases.  Since they attempt to estimate the density $P(\text{w}|c)$ of language as a sequence, the labels for supervised training are included in the data itself.  Consequently, obtaining a training set for a PLM does not require expensive human annotation; it is simply a matter of obtaining a corpus, which are abundant.
+
+Discriminative language models (DLMs) are, similarly, trained with sequential inputs.  They differ from PLMs in the scope of the context, the number of classes they are trained to predict, and the nature of the training data.  They may be trained with small contexts or much larger ones, such as entire sentences.  While PLMs predict a term in the vocabulary, which can be quite large, DLMs predict one of a typically much smaller set of classes.  This gives DLMs a run-time performance advantage over PLMs.   Finally, because a the target variable of a DLM is out of band, training them requires a labeled corpus, such as the one we describe in Section \ref{sec:PrepositionCorpora}.
+
+In recent years there has been a renewed interest in  \textit{distributed representations} of words.  It has been common in some applications to treat words as categories and thus to embed them into a disjoint space.  In this scheme, a word is represented by an indicator -- or \textit{one-hot} -- vector that is 0 everywhere except in the $i$-th position, where it is 1, with the $i$-th position uniquely denoting the given word.  This approach affords no nuance: the cosine similarity of two distinct words is always 0.  Distributed representations of words are real valued and (typically) not sparse.  Words can therefore be similar to other words in ways that conform to intuition, sometimes surprisingly so.  The term \textit{distributed representation} dates back to the work of Rumelhart and McClelland in the neural networks literature.  Latent semantic analysis is another early computational method \todo{Cite Rumelhart and McClelland and LSA}.
+
+An influential example from this new wave of applications of distributed word representatations used them in a multi-task setting with convolutional neural networks \cite{collobert2008unified}.  The model was first trained as a language model, using a ranking cost function, so as to learn the word representations.  Those representations were then shared across several convolutional networks trained to perform various natural language processing tasks.  The architecture of this network (cite precedents of collobert \& weston, too) is the de facto reference architecture for most uses of convolutional networks with distributed word representations for natural language processing tasks (cf. cite Kalchbrenner et al, sparse convolutional network paper).
+
+In this architecture, the input to the network is a sequence of indices into the weight matrix of the first layer.  The indices correspond to terms in the model's vocabulary.  Before an example can be presented to the network, it must be translated from tokens to indices.  Formally, let $V$ be the set of terms known to the model and let $\{\,U : 1 \ldots |V|\,\}$ be the indices of the terms.  Defined $v \colon V \to U$ as a function from terms to indices and $u \colon U \to V$ as the inverse of $v$.  When $t \notin V$, $v(t)$ is a unique term denoting that $t$ is unknown.  Before being presented to the model, a sequence of words $\mathbf{w}$ is converted to a sequence of indices $\mathbf{x}$, with $x_1 \ldots x_{l} \in IV$, where $l$ is the number of tokens in $\mathbf{w}$.
+
+The first layer of the network takes $\mathbf{x}$ as input and transforms it into a matrix $\mathbf{S} \in \mathbb{R}^{d \times l}$, where $d$ is the number of dimensions of the distributed word representations in the model.  Column $\mathbf{s}_i$ contains the distributed word representation for the word at position $i$ in $\mathbf{w}$.  Functionally, denote this operation as $s \colon Z^{l} \to R^{d \times l}$.
+
+The next layer of the network is the convolutional layer.  It has a 3-tensor of parameters, $\mathbf{W} \in \mathbb{W}^{f \times d \times n}$, where $f$ is the number of \textit{filters} and $n$ is the width of each filter.  This is shown in Figure \ref{fig:Convolution}.  $\mathbf{S}$ is transformed by $\mathbf{W}$ by swapping the rows and columns of a filter $\mathbf{W}_i$ and taking the sum of the elementwise product of the resulting weight matrix and each position in $\mathbf{S}$.  Applying a filter to $\mathbf{S}$, then, results in a length $l - n + 1$ vector, so the convolutional layer as a function is
+\begin{equation*}
+\ast \colon (\mathbb{R}^{f \times d \times n}, \mathbb{R}^{d \times l}) \to \mathbb{R}^{f \times (l - n + 1)}.
+\end{equation*}
+
+The output of $\ast(\mathbf{W}, \mathbf{S})$ is the input to a pooling operation that reduces the $(l - n + 1)$-width output of filter to a scalar, which can then be dispatched to some fixed-width layer, such as a softmax output layer or a fully-connected layer.  The pooling operation is usually either $\max c(\mathbf{W}, \mathbf{S})$ or $\frac{1}{l - n + 1} \sum c(\mathbf{W}, \mathbf{S})$, referred to simply as \textit{max pooling} and \textit{mean pooling}, respectively.  In our experiments we use max pooling, because it provides an incentive for filters to specialize in strong regularities in the inputs.  Thus, continuing with a functional view, the pooling layer can be defined as:
+\begin{equation*}
+p \colon \mathbb{R}^{f \times (l - n - 1}) \to \mathbb{R}^f.
+\end{equation*}
+\fi
+
+%The entire sequence of operations can reprsented thus:
+%\begin{equation*}
+%p(\ast((\mathbb{R}^{f \times d \times n}, s(\mathbb{Z}^l)) \to \mathbb{R}^f.
+%\end{equation*}
+
+%\section{Model inputs}
+%\label{sec:PrepositionInputs}
+
+%A trope in the contemporary neural network literature is that features learned from data are superior to hand-crafted ones.  Indeed, in the image classification domain, convolutional networks have performed dramatically better than models trained with hand-crafted features, given enough data.  Likewise, the use of distributed word repreentations has been shown to increase performance on natural language processing tasks, although less dramatically than for image classification.  While we eschew hand-crafted features in this paper, we nonetheless must consider what \textit{inputs} to provide to our models.
+
+%We know where the prepositions are in a sentence.  There may be more than one, so we need to force the model to focus on a particular one to determine whether it is correct.  One possibility is to use a fixed-width window of words centered on each preposition.  This is illustrated in Figure \ref{fig:Convolution}.  In this case, the training process would encourage each convolutional filter to specialize in detecting different aspects of preposition usage, regardless of which which filter \textit{component} came to activate highly on the preposition in the middle of the window.  While prepositions do bind strongly to the words that follow them, a potential deficiency of this approach is that other parts of a sentence may be useful for determining whether a preposition is correct.
+
+%Using the entire sentence as the input to the model is problematic, because it lacks a mechanism to force the model to focus on a particular preposition.  The learning task becomes harder.  In addition to learning whether a preposition is correct, it has to try to learn which preposition to focus on.  So using the entire sentence alone seems unlikely to help.
+
+%Consider, instead, using the concatenation of the window and the entire sentence.  The sentence-initial token ``\textless s\textgreater'' marks the beginning of every sentence, so the window is demarcated from the sentence.  This should allow filters to distinguish sequences at the end of the window from those at the beginning of the sentence, which in turn should allow some filters to specialize in the \textit{trailing} context of the preposition in question.  What we would now like is some other filters to specialize in the leading context.  This can be accomplished by replacing the preposition at the center of the window with a \textit{nonce}\footnote{A nonce is a word invented for a specific purpose that can be discarded once it has fulfilled its purpose.}.
+
+%Specialization may also occur by specifying it in the model's architecture.  The network would take two inputs for each example -- a vector of integers representing the fixed-width window and a vector of the same type representing the entire sentence.  The fixed-width window input would be processed by one convolutional and pooling module.  Likewise, there would be a separate convolutional and pooling module for the entire sentence.  This approach assigns convolutional filters to pre-determined roles by only presenting fixed-width windows to the filters assigned the task of detecting features of fixed-width windows, and only presenting entire sentences to the filters assigned the task of detecting features of sentences.  The architecture-driven approach to filter specialization introduces one hyperparameter (among several) that determines the proportion of filters to allot to each module.  By instead using a nonce word, we delegate responsibility for determining that proportion to back-propagation itself, which makes filter role assignment a dynamic process.  The assignment that occurs when specialization is enforced by the architecture is, by contrast, static.
+
+\section{Experiments}
+\label{sec:PrepositionExperiments}
+
+The experiments described in this section are designed to determine (1) how well a feature learning approach performs on examples of preposition use from Wikipedia and Encarta, and (2) how well a model trained using Wikipedia transfers out-of-domain preposition use (specifically, from 19th and early 20th century fiction and non-fiction).  In the next section we evaluate the performance of the Wikipedia model in relation to human judgments. 
+
+Model performance is evaluated using several metrics.  Accuracy alone is insufficient, since this is a multi-class classification task and the data are imbalanced.  Here we report precision, recall, and F1.  For overall performance across all prepositions, we report macro-weighted F1. 
+
+The models in this section were trained using Adagrad \cite{duchi2011adaptive}.  The final layer of every model is a 9-class softmax, one for every preposition in our confusion set.
+
+\section{Hyperparameter Selection}
+
+We first performed hyperparameter selection using a subset of 10m examples from our training set.  The parameter space included the filter widths $\{\, 3,5,7,9 \,\}$, the number of filters $\{\, 100, 500, 1000 \,\}$, and the inputs to the model $\{\,
+\text{\textbf{Sentence}}, \text{\textbf{Window\textit{N}}},
+\text{\textbf{Window\textit{N}}$\oplus$\textbf{Sentence}} \,\}$, where:
+\begin{itemize}
+\item \textbf{Sentence} is the entire sentence enclosed sentence boundary tags (``\textless\text{s}\textgreater'' and ``\textless\text{/s}\textgreater''), and
+\item \textbf{Window\textit{N}} is a context window of $N$ words centered on a preposition, where $N \in \{\,5,7,9\,\}$, and 
+\item \textbf{Window\textit{N}$\oplus$Sentence} is the concatenation of \textbf{Window\textit{N}} and \textbf{Sentence}.
+%\item \textbf{Nonce window}: same as \textbf{Window}, except the preposition has been replaced by a nonce word. 
+%\item \textbf{Nonce window$\oplus$Sentence}: the concatenation of \textbf{Nonce window} and \textbf{Sentence}.
+\end{itemize}
+
+\begin{table}
+\centering
+\begin{tabular}{lrr}
+%\begin{tabular}{lrrr}
+\toprule
+Inputs & Filter width & Acc. \\
+%Inputs & Filter width & N. Filters & Accuracy \\
+\midrule
+%\textbf{Window9}  & 1000 & 7 &  .801 \\
+\textbf{Window9} & 7 &  .801 \\
+%\textbf{Window9}$\oplus$\textbf{Sentence} & 1000 & 9 &  .800 \\
+\textbf{Window9}$\oplus$\textbf{Sentence} & 9 &  .800 \\
+%\textbf{Window5}$\oplus$\textbf{Sentence} &  1000 & 5 &  .800 \\
+\textbf{Window5}$\oplus$\textbf{Sentence} & 5 &  .800 \\
+%\textbf{Window9} &  500 &  7 &  .798  \\
+%\textbf{Window7}$\oplus$\textbf{Sentence} &  1000 & 7 &  .798  \\
+\textbf{Window7}$\oplus$\textbf{Sentence} & 7 &  .798  \\
+%\textbf{Window9}$\oplus$\textbf{Sentence} &  500 & 9 &  .797  \\
+%\textbf{Window7} & 1000 & 5 &  .794 \\
+\textbf{Window7} & 5 &  .794 \\
+%\textbf{Window7}$\oplus$\textbf{Sentence} &  500 & 7 &  .794  \\
+%\textbf{Window9}$\oplus$\textbf{Sentence} &  100 & 9 &  .787 \\
+%\textbf{Window7} & 500 & 5 &  .786 \\
+%\textbf{Window5}$\oplus$\textbf{Sentence} &  500 & 5 &  .785 \\
+%\textbf{Window9} & 100 & 7 &  .782  \\
+%\textbf{Window7}$\oplus$\textbf{Sentence} &  100 & 7 &  .781 \\
+%\textbf{Window7} & 100 & 5 &  .774 \\
+%\textbf{Window5}$\oplus$\textbf{Sentence} &  100 & 5 &  .772 \\
+%\textbf{Window5} &  1000 & 3 &  .765 \\
+\textbf{Window5} & 3 &  .765 \\
+%\textbf{Window5} &  500 & 3 &  .761 \\
+%\textbf{Window5} &  100 & 3 &  .748 \\
+%\textbf{Sentence} &1000 & 5 &  .732 \\
+\textbf{Sentence} & 5 &  .732 \\
+%\textbf{Sentence} & 500 & 5 &  .725 \\
+%\textbf{Sentence} & 100 & 5 &  .705 \\
+\bottomrule
+\end{tabular}
+\caption{Validation set accuracy of models trained with 10m sentences using 1000 convolutional filters and filter widths $\in \{\, 3,5,7,9 \,\}$.}
+\label{tab:HyperParameterSelection10m}
+\end{table}
+
+For faster training, all models trained during hyperparameter selection used pre-trained 300-dimensional word2vec vectors, which remained fixed across all epochs. The other parameters of the networks were initialized randomly using the same random seed.  As the models converged quickly, we stopped training after 10 epochs.  The networks had no hidden layers. 
+
+%We started by selecting the best filter width for each input type by training with a relatively small subset of 1m sentences.  We then selected the number of filters using a larger subset of 10m sentences; when training using this data set, we varied the number of filters and used the best filter width for a given input type determined by the 1m sentence model.  The models trained with 1m sentences had no hidden layers.  Those trained with 10m sentences had one hidden layer; the number of units were twice the number of filters using dropout \todo{Cite Dropout} with $p=.5$.
+
+Table \ref{tab:HyperParameterSelection10m} shows the results.  Models trained with 100 and 500 filters performed consistently worse than those trained with 1000 filters; to conserve space, only the latter are shown.  Larger window sizes also tended to perform better, but there is not a great deal of variance among the top-performing inputs.  The models trained with the concatenated inputs performed almost as well as that trained using \textbf{Window9} at the cost of increased training time.
+The most likely explanation of the poor performance of the \textbf{Sentence} model is that it provides no clues to the convolutional layer about \textit{where} in the sentence the preposition occurs.  By contrast, when a model is trained with a window input, the preposition occurs in the middle of the window, as in Table \ref{tab:Windows}; the consistent position of the preposition in the window allows the filters to detect the input preposition more strongly. 
+
+%A curious regularity that we noticed when selecting the optimal filter widths can be seen in Table \ref{tab:HyperParameterSelection10m}: the optimal filter widths are equal to two less than the window size for the \textbf{Window\textit{N}} models and are equal to the window size itself for all \textbf{Window\textit{N}}$\oplus$\textbf{Sentence}.  We believe this is caused by the beginning-of-sentence marker in \textbf{Sentence}, but validating that hypothesis is beyond the scope of this paper.
+
+%\begin{figure}
+%\centering
+%\includegraphics[width=.5\textwidth]{figures/preposition-feature-comparison-valid}
+%\caption{Validation set accuracy of convolutional model trained with 10 m sentences using different inputs.}
+%\label{fig:Inputs}
+%\end{figure}
+
+\section{Wikipedia}
+\label{sec:PrepositionExperimentsWikipedia}
+
+Informed by the preceding results, we used the entire training set to train a model using \textbf{Window9} inputs and filters of width 7.  Since we would be training with much more data, and since a greater number of filters was such a strong contributing factor in the results during hyperparameter selection, we opted to increase the number of filters to 3000 and use 3 fully-connected hidden layers with 6000 hidden units in each.  We randomly initialized the word embeddings of this model and chose to use 50-dimensional word embeddings; prior experience on other tasks leads us to believe that the increase in training time that comes with increasing the embedding size doesn't come with a corresponding increase in performance.  Batch normalization was used between the linear transformation and non-linear activation function of each layer \cite{ioffe2015batch}.  The output of the rectified linear activation was dropped out with $p=.5$ for the fully-connected layers only.  We trained the model for a week on a GeForce GTX TITAN X. 
+
+% \multicolumn{1}{|l|}{title text:} & description 1 \\
+
+\begin{table}
+\centering
+\begin{tabular}{cccc}
+                           & & \multicolumn{2}{c}{\textbf{Model}} \\
+                           \cline{3-4}
+                           & & No error & Error \\
+\hline
+\multirow{2}{*}{\textbf{Corpus}} & No error & 467181   & 32535 \\
+                                 & Error    & 50762    & 448954 \\
+\end{tabular}
+\caption{Error detection confusion matrix on our test set of 1m contrasting cases from our Wikipedia corpus.  The model's accuracy on the subset of real examples is .935.}
+\label{tab:DetectionConfusionMatrix}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{rr|rrr}
+\textbf{Task} & \textbf{Model} & \textbf{P} & \textbf{R} & \textbf{F1} \\
+\hline
+\multirow{2}{*}{Detection}  & Random & .50 & .11 & .18 \\
+                            & ConvNet & .93 & .90 & .92 \\
+\hline
+\multirow{2}{*}{Correction} & Random    & .11 & .11 & .11 \\
+                            & ConvNet   & .84 & .84 & .84 \\
+\hline
+\end{tabular}
+\caption{Precision (\textbf{P}), recall (\textbf{R}), and F1 of the model on our test set of 1m examples (500k contrasting cases) from our Wikipedia corpus.  The ConvNet model's correction performance differs at three points of precision.}
+\label{tab:Aggregate}
+\end{table}
+
+\iffalse
+\begin{table}
+\begin{tabular}{crrrr}
+\hline
+\multicolumn{1}{c}{\textbf{Preposition}} & \multicolumn{1}{c}{\textbf{P}} & \multicolumn{1}{c}{\textbf{R}} & \multicolumn{1}{c}{\textbf{F1}} & \multicolumn{1}{c}{\textbf{N}} \\
+\hline
+   at &       .83 &    .83 & .83 &      96122 \\
+   by &       .87 &    .85 & .86 &      100708 \\
+  for &       .76 &    .80 & .78 &      101072 \\
+ from &       .82 &    .79 & .80 &      97054 \\
+   in &       .84 &    .83 & .83 &      142788 \\
+   of &       .88 &    .90 & .89 &      143072 \\
+   on &       .84 &    .83 & .83 &      100584 \\
+   to &       .91 &    .89 & .90 &      117332 \\
+ with &       .81 &    .82 & .81 &      100700 \\
+\hline
+\end{tabular}
+\caption{Per-preposition precision (\textbf{P}), recall (\textbf{R}), and F1 of the model on error correction on our test set of 1m contrasting cases from our Wikipedia corpus.} 
+\label{fig:CorrectionByPreposition}
+\end{table}
+\fi
+
+The confusion matrix for error detection is shown in Table \ref{tab:DetectionConfusionMatrix}.  The model is somewhat less likely to predict that a non-error is an error; this is a desirable behavior for interactive educational applications, which should avoid false positives so as not to confuse the learner.  The aggregate performance of the model on both error detection and correction is shown in Table \ref{tab:Aggregate}.  The baseline models show the expected level of peformance when the predicted preposition $\text{w}_{pred}$ is selected by choosing randomly from $C$.
+
+%\begin{figure}
+%\includegraphics[width=.5\textwidth]{figures/precision-recall}
+%\caption{Precision-recall curves.}
+%\label{fig:PrecisionRecall}
+%\end{figure}
+
+%The error \textit{detection} confusion matrix of the resulting model is shown in Table \ref{tab:DetectionConfusionMatrix}.  
+%\begin{figure}
+%\centering
+%\begin{tabular}{c r || r r }
+%& & \multicolumn{2}{c}{Model} \\
+%& & No error & Error \\
+%\hhline{==#==}
+%\multirow{2}{*}{\parbox{1.5cm}{Corpus}} & No error & 470314 &  29462 \\
+%                                               & Error    &  36194 & 463582 \\
+%\end{tabular}
+%\caption{Test set confusion matrix of model trained with 60m sentences using both the nonce window and the entire sentence as input ($n = 999552$).}
+%\label{tab:DetectionConfusionMatrix}
+%\end{figure}
+
+%A common metric for these tasks is F-measure with Beta=0.5.  This is a preferred way of measuring performance, because it places more weight on precision than on recall.  By doing so it emphasizes the importance of not making Type I errors, which are not helpful to a learner.  
+
+%To ensure that a model deployed in a production environment provides high-quality feedback to users, it is important to understand how the model behaves as the input varies in ways that are easy to measure.  If the model's performance degrades significantly when a sentence has certain properties, a system can be configured not to provide predictions for prepositions in that sentence.  We therefore consider how the model performance varies with (1) sentence length and (2) the number of unknown words and their proximity to the preposition the model is asked to evaluate.  
+
+%To measure the model's performance as sentence length varies, we grouped the test set sentences by length and computed F1 score for each group.  The result is shown in Figure \ref{fig:EffectOfLength}.  While small, the effect of sentence length appears to be reduced performance for very short and long sentences.  A production preposition correction system of this kind, then, could check the length of an input before suggesting corrections to it.
+
+%Additionally (not shown here), to understand the model's dynamics in relation to this effect, we monitored the model's performance during training on the validation set.  We noticed that sentence length appeared to have an increasing effect on performance over time.  Before the learning curve asymptoted, performance by sentence length was approximately the same.  As the model neared the end of training, further gains in accuracy came by performing better on the medium-length sentences, which happen to be the majority of examples.  We suspect this is influenced by the distribution of sentence lengths in the training set, but further study would be required to be certain.
+
+\iffalse
+\begin{figure}
+\centering
+\includegraphics[width=.5\textwidth]{figures/f1-by-length}
+\caption{Test set F1 conditioned on sentence length.  The size of the blue points is a function of the number of sentences of that length in the test set.}
+\label{fig:EffectOfLength}
+\end{figure}
+\fi
+
+%\begin{figure}
+%\centering
+%\begin{tabular}{c || r r r r}
+%Task & Precision & Recall & F1 & F0.5 \\
+%\hhline{=#====}
+%Detection  & 0.94 & 0.92 & 0.93 & 0.93 \\
+%Correction & 0.86 & 0.86 & 0.86 & 0.86 \\
+%\end{tabular}
+%\caption{Test set metrics of model trained with 60m sentences using both the nonce window and the entire sentence as input ($n = 999552$).  Error correction metrics differ at four points of precision.}
+%\label{fig:Metrics}
+%\end{figure}
+
+\iffalse
+\begin{table}
+\centering
+\begin{tabular}{c c c c c r}
+\multicolumn{5}{c}{Position} & \\
+\cline{1-5} 
+-2 & -1 & & 1 & 2 & F1 \\
+\hline
+. & . & P & . & . & 0.80 \\
+\hline
+? & . & P & . & . & 0.75 \\
+. & ? & P & . & . & \textbf{0.60} \\
+. & . & P & ? & . & 0.62 \\
+. & . & P & . & ? & 0.70 \\
+\hline
+? & ? & P & . & . & 0.52 \\
+? & . & P & ? & . & 0.55 \\
+? & . & P & . & ? & 0.65 \\
+. & ? & P & ? & . & \textbf{0.37} \\
+. & ? & P & . & ? & 0.48 \\
+. & . & P & ? & ? & 0.52 \\
+\hline
+? & ? & P & ? & . & 0.31 \\
+? & ? & P & . & ? & 0.43 \\
+? & . & P & ? & ? & 0.46 \\
+. & ? & P & ? & ? & \textbf{0.26} \\
+\hline
+? & ? & P & ? & ? & 0.21 \\
+\hline
+\end{tabular}
+\caption{Sensitivity analysis of effect of unknown words around proposition on error correction performance ($N = 50000$).  ``P'' denotes any preposition in the confusion set, ``.'' any known word, and ``?'' an unknown word.} 
+\label{tab:CorrectionSensitivity}
+\end{table}
+\fi
+
+%Learner writing often contains spelling errors and neologisms.  The vocabulary of a mdoel is typically fixed once it is deployed.  Unknown words -- erroneous or not -- become unknown words to a model.  To understand the effect of unknown words, we performed a sensitivity analysis using a sample of 50,000 test set sentences that contain no unknown words.  We were particularly interested in the joint effect of the number of unknown words and their proximity to the preposition that the model is asked to evaluate.  Let $S = \{\, -2, -1, 1, 2 \,\}$ be the set of positions of words in proximity to some preposition $\text{w}_{actual}$.  $\mathbb{P}(S)$ is the power set of $S$.  For the sensitivity analysis, we chose $p \in \mathbb{P}(S)$, set the words in the positions $p$ for each of the 50,000 sentences to be the unknown word, and evaluated the model's performance using the perturbed sentences.  
+
+%Table \ref{tab:CorrectionSensitivity} shows the results grouped row-wise by the number of unknown words.  Performance degrades severely when words in the window are unknown.  The degradation is proportional to proximity to the preposition.  A clear lesson from this is that a production error correction system should not be allowed to suggest a correction if the window contains an unknown word.  The degradation is asymmetrical in places.  When only one word in the window is unknown, the degradation is greater at position 2 than position -2.  Similarly, when two words are unknown, the degradation is greater for the position set $\{\, -1, 2 \,\}$ than $\{\, -2, 1 \,\}$.  This may indicate that making the trailing context longer than the leading context may help on the preposition correction task. 
+
+\section{Encarta}
+\label{sec:PrepositionExperimentsEncarta}
+%\todo{For consistency within this paper, I should train the Encarta models using contrasting cases and, for consistency with previous work, evaluate using only real examples.  The way I'm doing it now is probably confusing, and it leads to me introducing the idea of a nonce word in the middle of the experiments section.  Also, include the hyperparameters of the Encarta model.} 
+
+One of the putative advantages of feature learning over feature engineering is the potential for a model to generalize well with a smaller number of training examples.  This advantage exists because in the feature learning approach a model only needs to learn approximate features -- as in the ``Frog ate lunch'' and ``Toad ate breakfast'' case mentioned in Section \ref{sec:PrepositionIntroduction}.  In this section we show that a ConvNet trained using a relatively small number of examples can achieve levels of performance approaching or exceeding those reported for models trained using an order of magnitude more examples.
+
+\begin{table}
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Preposition} & \textbf{Ga} & \textbf{Te} & \textbf{ConvNet} & \textbf{N} \\
+\midrule
+in    & .592 & .845 & \textbf{.897} & 245,281 \\
+for   & .459 & .698 & \textbf{.836} & 60,181 \\
+of    & .759 & .906 & \textbf{.918} & 314,513 \\
+on    & .322 & .751 & \textbf{.848} & 44,981 \\
+to    & .627 & .775 & \textbf{.866} & 80,433 \\
+with  & .361 & .675 & \textbf{.847} & 43,911 \\
+at    & .372 & \textbf{.685} & .612 & 27,181 \\
+by    & .502 & .747 & \textbf{.832} & 58,959 \\
+as    & .699 & \textbf{.711} & NA  & NA \\
+from  & .528 & .591 & \textbf{.792} & 39,781 \\
+about & \textbf{.800} & .654 & NA & NA \\
+\bottomrule
+\end{tabular}
+\caption{Per-preposition F1 measures reported (\textbf{Ga}) by Gamon et al. \cite{gamon2008using}, (\textbf{Te}) by Tetrault et al. \cite{tetreault2008native}, and our model.  \textbf{N} is the number of examples in our Encarta test set.  NA indicates the preposition is not in our confusion set.}
+\label{tab:EncartaPerPreposition}
+\end{table}
+
+Our Encarta training set is smaller -- 300k training examples -- than the one we used with Wikipedia, so we opted for a network with less capacity.  We used \textbf{Window9} inputs, 300 filters of width 7, no fully-connected layers, and randomly-initialized 25-dimensional word embeddings.  We also used batch normalization between the convolutional layer and its activation function \cite{ioffe2015batch}, which was necessary to get the network to converge.
+
+\begin{table*}
+\centering
+\begin{tabular}{rrrr}
+%\toprule
+ & \multicolumn{2}{c}{F1} &  \\
+ \cline{2-3}
+Title & Detection ($\delta$) & Correction ($\delta$) & N \\
+\midrule
+The Adventures of Tom Sawyer                    & .76~~(-.16) & .63~~(-.21) &  3,836 \\
+Emma                                            & .76~~(-.16) & .61~~(-.23) &  6,782 \\
+Frankenstein                                    & .77~~(-.15) & .64~~(-.20) &  3,852 \\
+Moby Dick                                       & .72~~(-.20) & .60~~(-.24) &  8,226 \\
+The Narrative of the Life of Frederick Douglass & .79~~(-.13) & .66~~(-.18) &  2,230 \\
+Pride and Prejudice                             & .77~~(-.15) & .65~~(-.19) &  6,156 \\
+Ulysses                                         & .72~~(-.20) & .57~~(-.27) & 14,436 \\
+War and Peace                                   & .78~~(-.14) & .67~~(-.17) & 29,424 \\
+\end{tabular}
+\caption{The model's performance on contrasting cases derived from books available from Project Gutenberg.  The drop in performance compared to the in-domain Wikipedia test set is shown in parentheses.  N is twice the number of sentences in the corpus after sentence segmentation, due to the doubling effect of contrasting cases}
+\label{tab:Books}
+\end{table*}
+
+The model's F1 measure for each preposition is shown in Table \ref{tab:EncartaPerPreposition}, which also shows results from models trained using a corpus consisting of examples of real preposition use from the Reuters and Encarta corpora \cite{gamon2008using,tetreault2008native}.  The training and test sets for those models had 3.2m and 1.4m examples, respectively.  The original train-test split is no longer available\footnote{Private communication with Michael Gamon.}.  There are some key differences between those models and ours.  We do not use the Reuters corpus, so some variance in preposition use that is particular to newswire text may not be accounted for in our results.  Our model corrects 9 prepositions, whereas the Gamon and Tetreault models correct 13 and 34, respectively.  There is therefore not perfect parity between our results and theirs.  Since, however, our test set ($\sim$900k examples) is on the same order of magnitude as theirs, these results are sufficient to make the point: feature learning is competitive with feature engineering, even when there is an order of magnitude fewer training examples.
+
+%Figure \ref{fig:EncartaLearningCurves} shows the validation set accuracy of models trained for 10 epochs using different sizes of training set.  The models had 300 convolutional filters of width 7, no hidden layers, 25-dimensional randomly-initialized word embeddings, batch normalization in the convolutional layer, and dropout probabilities 0.2 and 0.1 after the word embedding and convolutional layers, respectively.  The accuracy of the model trained using 350k examples is .78, which is competitive with the Tetreault model trained with 3.2m examples.  
+
+%\begin{figure}
+%\centering
+%\includegraphics[width=.5\textwidth]{figures/encarta-learning-curve-valid}
+%\caption{Validation set learning curves of models trained using only real examples from Microsoft Encarta 98.}
+%\label{fig:EncartaLearningCurves}
+%\end{figure}
+
+\section{Project Gutenberg}
+
+To understand the potential for performance degradation on out-of-domain examples, we preprocessed eight books from Project Gutenberg as described in Section \ref{sec:PrepositionCorpora} and used the Wikipedia model described in Subsection \ref{sec:PrepositionExperimentsWikipedia} to correct the contrasting cases.  The aggregate results for error detection and correction are shown in Table \ref{tab:Books}.  The Wikipedia model performs worst on ``Moby Dick'' and ``Ulysses'', which is quite likely due to the peculiarity of some of their passages.  The decrease in error correction performance relative to the Wikipedia test set is consistently around .2.  This suggests that the Wikipedia model significantly overfit the characteristics of writing found in Wikipedia articles.  It also suggests that additional techniques may be necessary in order for this approach to be effective for error correction of native and non-native learner writing.
+
+
+%\todo[inline]{Take every sentence from the CoNLL 2104 Shared Task \textbf{\textit{training}} set that has a preposition in our confusion set.  Run the sentences through our model and compare our predictions to human annotations.}
+
+%A final note: both when doing hyperparameter selection and when training our final models, model selection was determined by validation set performance using simple accuracy.  The data set being somewhat imbalanced, the cost function assigned a greater penalty to errors on less frequent target values.  The cost for an example with target $t$ was scaled by the square of 1 minus the difference between the $t$'s fraction of the total training set and the average fraction across all classes.
+
+\section{Human Judgments}
+\label{sec:PrepositionHuman}
+
+\begin{table*}
+\centering
+%\begin{tabular}{lllllll}
+\begin{tabular}{llllll}
+\toprule
+%           &           A1 &          A2 &          A3 &          A4 &      Corpus &  ConvNet \\
+%\midrule
+%%            &            &            &            &            &             &           \\
+%A1           &          . &  .83 (177) &  .72 (155) &  .70 (175) &   .78 (507) & .75 (507) \\
+%A2           &  .83 (177) &          . &  .79 (163) &  .79 (179) &   .83 (519) & .78 (519) \\
+%A3           &  .72 (155) &  .79 (163) &          . &  .77 (151) &   .80 (469) & .76 (469) \\
+%A4           &  .70 (175) &  .79 (179) &  .77 (151) &          . &   .79 (505) & .75 (505) \\
+%Corpus       &  .78 (507) &  .83 (519) &  .80 (469) &  .79 (505) &           . & .83 (1000) \\
+%ConvNet      &  .75 (507) &  .78 (519) &  .76 (469) &  .75 (505) &  .83 (1000) &          . \\
+           &           A1 &          A2 &          A3 &          A4 &      ConvNet \\
+\midrule
+A1           &          . &  .83 (177) &  .72 (155) &  .70 (175) &   .75 (507) \\
+A2           &  .83 (177) &          . &  .79 (163) &  .79 (179) &   .78 (519) \\
+A3           &  .72 (155) &  .79 (163) &          . &  .77 (151) &   .76 (469) \\
+A4           &  .70 (175) &  .79 (179) &  .77 (151) &          . &   .75 (505) \\
+ConvNet      &  .75 (507) &  .78 (519) &  .76 (469) &  .75 (505) &   . \\
+\bottomrule
+\end{tabular}
+\caption{Cohen's $\kappa$ of human annotators (A1-A4) and the ConvNet on Wikipedia test set examples.  The number of examples used to compute Kappa for a given pair is shown in parentheses.}
+\label{tab:Kappa}
+\end{table*}
+
+The results reported in the previous sections suggest that this approach is promising.  Our model is trained and evaluated, however, on real examples and artificial errors, the distribution of which almost surely differs from the distribution of real errors made by learners  \cite{rozovskaya2010generating}.  Additional validation of the model -- beyond agreement with the corpus -- would therefore be informative.  In this study, we employed four human annotators to perform preposition error correction on a sample of 1000 sentences from our test set.  The annotators are an instructional designer with a B.A. in classics (A1), a Ph.D. psychometrician (A2), a Ph.D. linguist (A3), and an instructional designer with a B.A. in English education (A4).
+
+Each annotator was assigned approximately 500 sentences to correct.  The sample given to an annotator was constrained by two considerations.  We wanted every sentence to receive two human judgments.  This ensured that we could compute inter-rater reliability using Cohen's $\kappa$.  We also wanted to be able to compute $\kappa$ using approximately the same number of sentences for each pair of annotators, so the distribution of pairs of annotators across all sentences is approximately uniform.
+
+Annotators were shown the entire sentence and the preposition to correct was rendered in bold font.   They were asked to select what they believed to be the correct preposition from a drop-down list.  
+%They were also asked to state how confident they were in their judgment by selecting from a drop-down list; their options were ``Not very confident'', ``Somewhat confident'', and ``Very confident''.  The interface also had a drop-down list for the annotator to provide a quality judgment -- ``OK'', ``Some markup'', ``Fragment'', and ``Indecipherable'' -- about the sentence.  We mention the confidence estimates and sentence quality judgments provided by the annotators solely for completeness; an analysis that includes them is outside the scope of this study.
+The results are shown in Table \ref{tab:Kappa}.  Overall, $\kappa$ is quite high.  The annotator-annotator $\kappa$ values are less precise than the annotator-model $\kappa$ values, in that they are derived from a sample that is smaller by a factor of three.  We note that the range of agreement of the model with the annotators (.75-.78) is well within the range among all pairings of annotators (.70-.83).  There is also less variance in the annotator-model $\kappa$ values.  These results indicate that the task can be performed reasonably well by humans and that the model performs on par with humans.  
+
+%\section{Related work}
+%\label{sec:PrepositionRelated}
+
+%\todo[inline]{Introduce non-native error correction.}
+%\todo[inline]{Cite Native Judgments of Non-Native Usage: Experiments in Preposition Error Detection.}
+
+%\begin{itemize}
+%\item Automatically acquiring models of preposition use \cite{de2007automatically}
+%\item Using Contextual Speller Techniques and Language Modeling for ESL Error Correction \cite{gamon2008using}
+%\end{itemize}
+%Nagata and Nakatani provide empirical support for the view that error detection and correction systems should be optimized for precision rather than recall \cite{nagata2010evaluating}.  
+
+% These can be used to rebut critiques of our calling contrasting cases a ``regularizer''.
+%\begin{itemize}
+%\item universum prescription \cite{zhang2015universum}
+%\item dropout as data augmentation \cite{konda2015dropout}
+%\item word dropout \cite{iyyer-EtAl:2015:ACL-IJCNLP}; contrasting cases can be as a domain-specific non-stochastic version of word dropout.
+%\end{itemize}
+
+\section{Conclusion}
+\label{sec:PrepositionConclusion}
+
+Our results show that models trained by learning features are competitive with feature engineering models. They also show that the models incur a noticeable degradation of performance on out-of-domain examples.  We introduced contrasting cases to address the problem of a ConvNet learning a trivial solution when trained with real examples.
+
+Since the distribution of errors in our corpus does not necessarily reflect the distribution of errors made by learners \cite{rozovskaya2010generating}, we evaluated our corpus against human judgments on a subset of the test set.  This analysis showed that there is little overall difference between the predictions of the models and the judgments of annotators.  
+
+Many preposition error correction systems handle two kinds of errors that the exploratory system described here does not -- extraneous and missing prepositions.  Our system currently only handles preposition replacement errors.  Replacement errors are more common than missing or extraneous word errors in one corpus of errors \cite{andersen2007grammatical}, so we believe our initial investigation is an important contribution to the field.  We nonetheless intend to enhance our system in the future to handle extraneous and missing prepositions.  We also intend to expand the kind of errors the system can correct and to evaluate it using recently-released human-annotated error correction datasets \cite{dale2011helping,ng2013conll,ng2014conll}.  
+
+Overall, these results indicate that feature learning is a promising approach to correcting preposition selection errors and that further work -- such as domain adaptation so as to identify errors made by native and non-native writers -- is warranted.  Because unannotated data are relatively easy to acquire and annotations are costly, we believe that the most promising way to adapt our approach to specific populations -- to the writing of native speakers of a particular language who are learning English, for example -- is to take advantage of the relative abundance of data.  One way this may happen is to use pre-trained word embedding and convolutional layers and to use a relatively small supervised data set to train fully-connected layers on top of them.  Another way may be to use a semi-supervised model such as ladder networks \cite{rasmus2015semi}, which have been shown to achieve high accuracy on the MNIST image classification data set\footnote{\url{http://yann.lecun.com/exdb/mnist/}} in a semi-supervised setting using only 100 labeled examples and many more unlabeled ones.   
+
+%It is possible that a convolutional network will prove to be unfit for other error types.  Achieving satisfactory performance on error types that are a function of distant dependencies may require other sequence-oriented network architectures, such as recurrent networks with attention mechanisms \cite{bahdanau2014neural,vinyals2014grammar}.
+
+%The ultimate goal of this line of investigation is to improve 
+%correction of native and non-native learner errors is to adapt  
+%acquire a corpus of learner errors, to refine the model using small data sets, and to investigate techniques for domain adaptation.  For our experiments, for example, we generated contrasting cases randomly.  Not all errors are equally likely, so better methods for generating training examples may be beneficial 
+
+%\section*{Acknowledgments}
+%The authors would like to thank C.R. for editing a draft of this paper.
+
+%\bibliographystyle{naaclhlt2016}
+%\bibliography{naaclhlt2016}
+
+%\bibliographystyle{naaclhlt2016}
+%\bibliography{naaclhlt2016}
+
+%\end{document}
