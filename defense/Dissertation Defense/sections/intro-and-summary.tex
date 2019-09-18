@@ -1,0 +1,98 @@
+\begin{frame}
+\begin{table}
+{
+    \def\arraystretch{2}
+    \begin{tabular}{cc}
+    \textsc{Cause} & \textsc{Example} \\
+    \hline
+    Typographic & It was \textbf{\textit{teh}} best of times, \ldots \\
+    Cognitive & The tuba was \textbf{\textit{quiet}} loud. \\
+    Cognitive & It was the \textbf{\textit{bast}} of times, \ldots \\
+    Cognitive & \parbox{7cm}{\centering These green house gases are the main \\ cause \textbf{\textit{to}} worldwide global warming \ldots} \\
+    \end{tabular}
+}
+\end{table}
+\begin{tikzpicture}[overlay, remember picture, yshift=.25\baselineskip, shorten >=.5pt, shorten <=.5pt]
+    \node[color=red] at (2,6) {Non-word};
+    \draw [->,color=red] (2, 5.75) to[out=-45,in=90] (5.82,3.80);
+    \node[color=blue] at (9.5,-1) {Real word};
+    \draw [->,color=blue] (9.5, -0.8) to[out=90,in=-90] (7.5,2.5);
+    \draw [->,color=blue] (9.4, -0.8) to[out=102,in=-90] (6.5,1.5);
+    \draw [->,color=blue] (9.3, -0.8) to[out=115,in=-90] (4.68,0.35);
+    
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Non-word Error Detection}
+\centering
+$V := \,\{\, w_1, w_2, \ldots, w_n \,|\, w \in A^n\,\}$ \\ 
+\begin{align*}
+\textsc{CHECK}_{hard}:&\,s \in A^n \to s \in \textsc{V} \\
+\textsc{CHECK}_{hard}:&\,\text{``aardvark''} \to True \\
+\textsc{CHECK}_{hard}:&\,\text{``teh''} \to False \\
+\\
+\textsc{CHECK}_{soft}:&\,s \in A^n \to [0,1]  \\
+\textsc{CHECK}_{soft}:&\,\text{``aardvark''} \to 0.71 \\
+\textsc{CHECK}_{soft}:&\,\text{``teh''} \to 0.44 \\
+\end{align*}
+\end{frame}
+
+\begin{frame}
+\frametitle{Non-word Error Correction}
+\centering
+$V:= \,\{\, w_1, w_2, \ldots, w_n \,|\,w \in A^n\,\}$ \\ 
+\begin{align*}
+\textsc{CORRECT}_{isolated}:&\,s \notin \textsc{V} \to s^{\prime} \in \textsc{V} \\
+\textsc{CORRECT}_{context}:&\,s \notin \textsc{V} \times \{\, \ldots,w_{-1},w_{+1},\ldots \,\} \to s^{\prime} \in \textsc{V}
+\end{align*}
+\end{frame}
+
+\begin{frame}
+\frametitle{Real word error correction}
+\centering
+$V := \,\{\, w_1, w_2, \ldots, w_n \,|\, w \in A^n\,\}$ \\  
+$C := \,\{\, w_1, w_2, \ldots, w_m \,|\, w \in V \,\}, |C\,| \ll |V\,|$ \\
+\centering
+\begin{align*}
+\textsc{CORRECT}:&\,s \in \textsc{C} \times \{\, \ldots,w_{-1},w_{+1},\ldots \,\} \to s^{\prime} \in \textsc{C}
+\end{align*}
+\end{frame}
+
+\begin{frame}
+\begin{figure}
+\centering
+\tikzset{module/.append style={bottom color=orange}}
+\smartdiagramset{border color=none,back arrow disabled=true,set color list={red,red,red,red,red},text width=4cm,text color=black}
+\smartdiagram[flow diagram:vertical]{\textsc{CHECK},\textsc{RETRIEVE} candidates ,\textsc{RANK} candidates, \textsc{RETURN} best candidate,Replace error with best candidate}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Summary of Results}
+\begin{itemize}
+    \item Non-word error detection
+        \begin{itemize}
+            \item ConvNets separate English words from non-words
+            \item Decision boundary holds well for English words versus words other languages
+            \item Character language models poor on this task 
+        \end{itemize}
+    \item Isolated non-word error correction
+        \begin{itemize}
+            \item ConvNets competitive with standard techniques
+            \item Difficulty inversely proportional to word length 
+        \end{itemize}
+    \item Context-dependent non-word error correction
+        \begin{itemize}
+            \item Evaluated on difficult words (3-4 characters) 
+            \item ConvNets outperform Google 1TB 5-gram language model 
+            \item Regularization via additive noise improves performance
+        \end{itemize}
+    \item Context-dependent real word error correction
+        \begin{itemize}
+            \item Small size of $C$ causes ConvNet to learn trivial solution
+            \item Regularize via contrasting cases 
+            \item Near-human performance 
+        \end{itemize}
+\end{itemize}
+\end{frame}

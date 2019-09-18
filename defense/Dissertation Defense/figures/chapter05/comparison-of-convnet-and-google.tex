@@ -1,0 +1,40 @@
+\begin{table}
+\centering
+\begin{tabular}{ccc}
+\hline
+\textsc{Context} & \textsc{Rank} & \textsc{P(Candidate)} \\
+\hline
+coherent and \textcolor{red}{some} after the & 1 & 1.6e-05 \\
+coherent and \textcolor{red}{none} after the & 2 & 2.3e-07 \\
+%coherent and \textcolor{red}{son} after the  & 3 & 6.6e-07 \\
+%coherent and \textcolor{red}{nose} after the & 4 & 8.2e-08 \\
+coherent and \textcolor{red}{sore} after the & 5 & 8.7e-09 \\
+%coherent and \textcolor{red}{sons} after the & 6 & 8.2e-08 \\
+%coherent and \textcolor{red}{done} after the & 7 & 1.5e-06 \\
+coherent and \textcolor{green}{\textbf{sane}} after the & 8 & 2.5e-09 \\
+%coherent and \textcolor{red}{ones} after the & 9 & 3.9e-07 \\
+\hline
+\end{tabular}
+\caption{An incorrect ranking by the Google Web 1T 5-gram Corpus \textsc{RANK} model.}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{ccc}
+\hline
+\textsc{Context} & \textsc{Rank} & \textsc{P(Candidate)} \\
+\hline
+vision and \textcolor{red}{sad} if you &     1 &     5.1e-08 \\
+vision and \textcolor{red}{send} if you &     3 &    2.0e-07 \\
+%vision and \textcolor{red}{sing} if you &     5 &    4.0e-08 \\
+vision and \textcolor{red}{sold} if you &     7 &    2.0e-07 \\
+%vision and \textcolor{red}{sit} if you &     9 &     1.6e-07 \\
+%vision and \textcolor{red}{sin} if you &    11 &     1.0e-07 \\
+%vision and \textcolor{red}{sip} if you &    13 &     3.4e-09 \\
+%vision and \textcolor{red}{aid} if you &    15 &     2.4e-07 \\
+vision and \textcolor{red}{stud} if you &    17 &    1.6e-09 \\
+vision and \textcolor{green}{\textbf{said}} if you &    19 &                      1.1e-05 \\
+\hline
+\end{tabular}
+\caption{An incorrect ranking by the Word and Character ConvNet \textsc{RANK} model.}
+\end{table}

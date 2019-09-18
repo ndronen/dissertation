@@ -1,0 +1,189 @@
+\begin{tikzpicture}[scale=0.5,every node/.style={minimum size=1cm,scale=0.5},on grid]
+    % Input sequence to integers. 
+    \begin{scope}
+        % Input sequence
+        \node[color=black] (cat) at (-2.,-3) {\Large $t_{i-2}$};
+        \node[color=black] (sat) at (-1,-3) {\Large $t_{i-1}$};
+        \node[color=black] (on) at (0,-3) {\Large $t_{i}$};
+        \node[color=black] (the) at (1,-3) {\Large $t_{i+1}$};
+        \node[color=black] (mat) at (2,-3) {\Large $t_{i+2}$};
+        
+        % Index vector
+        \node[color=black!45] (catidx) at (-2.,-1.5) {1};
+        \node[color=black!45] (satidx) at (-1,-1.5) {2};
+        \node[color=black!45] (onidx) at (0,-1.5) {6};
+        \node[color=black!45] (theidx) at (1,-1.5) {9};
+        \node[color=black!45] (matidx) at (2,-1.5) {7};
+        
+        % Arrows from input sequence to index vector.
+        \draw[->,color=black!45] (cat) edge (catidx);
+        \draw[->,color=black!45] (sat) edge (satidx);
+        \draw[->,color=black!45] (on) edge (onidx);
+        \draw[->,color=black!45] (the) edge (theidx);
+        \draw[->,color=black!45] (mat) edge (matidx);
+        
+        % Arrows from index vector to embedding matrix.
+        \draw[->,color=black!45] (catidx) edge (-2.75,0.25);
+        \draw[->,color=black!45] (satidx) edge (-2.25,0.25);
+        \draw[->,color=black!45] (onidx) edge (0.25,0.25);
+        \draw[->,color=black!45] (theidx) edge (2.25,0.25);
+        \draw[->,color=black!45] (matidx) edge (0.75,0.25);
+        
+        % Arrows from embedding matrix to sentence matrix. 
+        \draw[->,color=black!45] (-2.75, 2) edge (-1.25,3.75);
+        \draw[->,color=black!45] (-2.25, 2) edge (-0.75,3.75);
+        \draw[->,color=black!45] (0.25, 2) edge (-0.25,3.75);
+        \draw[->,color=black!45] (2.25, 2) edge (0.25,3.75);
+        \draw[->,color=black!45] (0.75, 2) edge (0.75,3.75);
+    \end{scope}
+    
+    % Embedding matrix
+    \begin{scope}
+        \draw[step=5mm, black] (-3,0) grid (3,2);
+        
+        % Fill the columns selected by the input vector. 
+        % cat
+        \fill[black,fill opacity=.25] (-3,0) rectangle (-2.5, 2);
+        % sat
+        \fill[black,fill opacity=.25] (-2.5,0) rectangle (-2, 2);
+        % on
+        \fill[black,fill opacity=.25] (0.0,0) rectangle (0.5, 2);
+        % the
+        \fill[black,fill opacity=.25] (2,0) rectangle (2.5, 2);
+        % mat
+        \fill[black,fill opacity=.25] (0.5,0) rectangle (1.0, 2);
+    \end{scope}
+    
+    % Sentence matrix.
+    \begin{scope}[xshift=-15,yshift=100]
+        % Fill the preposition's column with gray.
+        %\fill[gray,fill opacity=.75] (0.0,0) rectangle (0.5, 2);
+    	% The grid itself.
+    	
+        \draw[step=5mm, black] (-1,0) grid (1.5,2);
+        
+        % Fill the columns selected by the input vector. 
+        % cat
+        \fill[black,fill opacity=.25] (-1,0) rectangle (-0.5, 2);
+        % sat
+        \fill[black,fill opacity=.25] (-0.5,0) rectangle (-0, 2);
+        % on
+        \fill[black,fill opacity=.25] (0.0,0) rectangle (0.5, 2);
+        % the
+        \fill[black,fill opacity=.25] (0.5,0) rectangle (1, 2);
+        % mat
+        \fill[black,fill opacity=.25] (1,0) rectangle (1.5, 2);
+    \end{scope}
+    
+    \pgfmathsetseed{123321}
+    \foreach \shift in {0, ..., 4}
+    {
+    	\begin{scope}[yshift=225-5*\shift, xshift=-15-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 2);
+            
+            % Choose a column to make gray to illustrate where the filter
+            % specialized in prepositions.
+            %\pgfmathsetmacro{\column}{random(3)}
+            %\fill[green,fill opacity=.5] (0.5*\column-0.5,0) rectangle (0.5*\column, 2);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (1.5, 2);
+    	\end{scope}
+	}
+	
+	% Lines connecting sentence embedding with convolutional filters.
+	\begin{scope}[yshift=225]
+        \draw [decorate,color=red,decoration={brace,amplitude=3pt}, yshift=0pt] (-1.5,-2.3) -- (0, -2.3);
+        \draw[color=red] (-1.50, -2.3) edge (-1.11,-0.75);
+        \draw[color=red] (0, -2.3) edge (0.35,-0.75);
+        
+        \draw [decorate,color=blue,decoration={brace,amplitude=3pt}, yshift=0pt] (-1.05,-2.1) -- (0.45, -2.1);
+        \draw[color=blue] (-1.05, -2.1) edge (-1.11,-0.75);
+        \draw[color=blue] (0.45, -2.1) edge (0.35,-0.75);
+        
+        \draw [decorate,color=green,decoration={brace,amplitude=3pt}, yshift=0pt] (-0.50,-1.9) -- (1.0, -1.9);
+        \draw[color=green,solid] (-0.50, -1.9) edge (-1.11,-0.75);
+        \draw[color=green,solid] (1.0, -1.9) edge (0.35,-0.75);
+    \end{scope}
+        
+    % Lines connecting convolutional filters with their outputs.
+    \begin{scope}[yshift=225]
+        \draw[color=red] (-1.11,1.25) edge (-1.00,3.25);
+        \draw[color=red] (0.35,1.25) edge (-0.79,3.25);
+        
+        \draw[color=blue] (-1.11,1.25) edge (-0.48,3.25);
+        \draw[color=blue] (0.35,1.25) edge (-0.27,3.25);
+        
+        \draw[color=green] (-1.11,1.25) edge (0.02,3.25);
+        \draw[color=green] (0.35,1.25) edge (0.23,3.25);
+    \end{scope}
+    
+    % Output of convolution.
+    \foreach \shift in {0, ..., 3}
+    {
+    	\begin{scope}[yshift=335-5*\shift, xshift=-15-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 0.5);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (1.5, 0.5);
+    	\end{scope}
+	}
+	
+    % Color fills in convolutional outputs. 
+    \begin{scope}[yshift=315, xshift=-31]
+        \fill[red,fill] (0,0) rectangle (0.5, 0.5);
+        \fill[blue,fill] (0.5,0) rectangle (1.0, 0.5);
+        \fill[green,fill] (1,0) rectangle (1.5, 0.5);
+      	\draw[step=5mm, black] (0,0) grid (1.5, 0.5);
+      	
+        \draw[thick,color=cyan] (0,0.5) edge (0,1.5);
+        \draw[thick,color=cyan] (1.5,0.5) edge (1.5,1.5);
+        \draw[decorate,thick,color=cyan!80,decoration={brace,amplitude=5pt}, yshift=0pt] (0,1.5) -- (1.5, 1.5);
+        \draw[thick,color=cyan] (.75,1.8) edge (.75,2.25);
+    \end{scope}
+    
+    % Output of max pooling operation.
+    \foreach \shift in {0, ..., 3}
+    {
+    	\begin{scope}[yshift=400-5*\shift, xshift=-4*\shift]
+        	% Opacity to prevent graphical interference.
+        	\fill[white,fill opacity=.875] (0,0) rectangle (.5, .5);
+            
+        	% The grid itself.
+        	\draw[step=5mm, black] (0,0) grid (.5, .5);
+    	\end{scope}
+	}
+	
+  	\begin{scope}[yshift=380, xshift=-16]
+        %\draw[->=latex,color=black,thick] (0.6,-1.79) edge (0.25,0);
+        %>=latex
+        % Opacity to prevent graphical interference.
+        \fill[green,fill opacity=.875] (0,0) rectangle (.5, .5);
+            
+        % The grid itself.
+        \draw[step=5mm, black] (0,0) grid (.5, .5);
+    \end{scope}
+	
+    % Braces/labels of layer outputs.
+    \draw [decorate,decoration={brace,amplitude=4pt}, yshift=0pt] (-4,3.25) -- (-4,6) node [label={[label distance=0.25cm,text depth=-1ex, rotate=0]\parbox{2cm}{\centering Input\\embedding}}] at (-5.4,3.55) {};
+    
+    \draw [decorate,decoration={brace,amplitude=3pt}, yshift=0pt] (-4,10.75) -- (-4,12.5) node [label={[label distance=0.25cm, rotate=0]\parbox{2cm}{\centering Filter\\outputs}}] at (-5.10,10.25) {};
+    
+    \draw [decorate,decoration={brace,amplitude=3pt}, yshift=0pt] (-4,13.25) -- (-4,14.75) node [label={[label distance=0.25cm, rotate=0]\parbox{3cm}{\centering Max pooling\\outputs}}] at (-5.50,12.65) {};
+    
+    \node at (-6,-3) {\centering String inputs} edge[->] (-3,-3) {};
+    
+    \node at (-6,-1.5) {\centering Embedding indices} edge[->] (-3,-1.5) {};
+    
+    % Braces/labels of layers.
+    \node at (5,-2.25) {\parbox{3cm}{\centering Mapping from\\strings to indices}} edge[->] (2.5,-2.25) {};
+    
+    \draw [decorate,decoration={brace,amplitude=3pt,mirror}, yshift=0pt] (4,-0.25) -- (4,2.25) node [label={[label distance=0.25cm, rotate=0]\parbox{2cm}{\centering Embedding\\matrix}}] at (5.5,-0.25) {};
+    
+    \draw [decorate,decoration={brace,amplitude=3pt,mirror}, yshift=0pt] (4,6.75) -- (4,10.0) node [label={[label distance=0.25cm, rotate=0]\parbox{2cm}{\centering Convolutional\\filters}}] at (5.5,7.25) {};
+    
+    \node at (4,13.5) {\centering Max pooling operation} edge[->] (0.85,12.75) {};
+    
+\end{tikzpicture}

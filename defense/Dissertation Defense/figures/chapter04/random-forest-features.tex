@@ -1,0 +1,18 @@
+    \begin{tabular}{p{3cm}|l}
+    \textsc{Inputs} & \textsc{Description} \\
+\hline
+All candidates. & Length of candidate list. \\
+\hline
+Candidate only. & Unigram probability (Google N-grams). \\
+\hline
+\multirow{4}{3cm}{Non-word and candidate, separately.} & Length of string. \\ 
+& Number of consonants, vowels, or capitals in string. \\
+& Whether string contains space. \\
+& Bag-of-words bigrams of string. \\
+\hline
+\multirow{5}{3cm}{Tuple of non-word and candidate.} & Levenshtein of strings or phonetic encodings. \\
+& Damerau-Levenshtein of strings or phonetic encodings. \\
+& Hamming of strings or phonetic encodings. \\
+& Jaro of strings or phonetic encodings. \\
+& Jaro-Winkler of strings or phonetic encodings. \\
+\end{tabular}

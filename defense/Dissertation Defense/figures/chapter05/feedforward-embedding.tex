@@ -1,0 +1,82 @@
+\begin{tikzpicture}[scale=0.5,every node/.style={minimum size=1cm,scale=0.5},on grid]
+    % Input sequence to integers. 
+    \begin{scope}
+        % Input sequence
+        \node[color=magenta] (cat) at (-2.,-3) {\Large $w_{i-2}$};
+        \node[color=yellow] (sat) at (-1,-3) {\Large $w_{i-1}$};
+        \node[color=blue] (on) at (0,-4) {\Large $candidate$};
+        \node[color=red] (the) at (1,-3) {\Large $w_{i+1}$};
+        \node[color=cyan] (mat) at (2,-3) {\Large $w_{i+2}$};
+        
+        % Index vector
+        \node[color=magenta] (catidx) at (-2.,-1.5) {1};
+        \node[color=yellow] (satidx) at (-1,-1.5) {2};
+        \node[color=blue] (onidx) at (0,-1.5) {6};
+        \node[color=red] (theidx) at (1,-1.5) {9};
+        \node[color=cyan] (matidx) at (2,-1.5) {7};
+        
+        % Arrows from input sequence to index vector.
+        \draw[->,color=magenta] (cat) edge (catidx);
+        \draw[->,color=yellow] (sat) edge (satidx);
+        \draw[->,color=blue] (on) edge (onidx);
+        \draw[->,color=red] (the) edge (theidx);
+        \draw[->,color=cyan] (mat) edge (matidx);
+        
+        % Arrows from index vector to embedding matrix.
+        \draw[->,color=magenta] (catidx) edge (-2.75,0.25);
+        \draw[->,color=yellow] (satidx) edge (-2.25,0.25);
+        \draw[->,color=blue] (onidx) edge (0.25,0.25);
+        \draw[->,color=red] (theidx) edge (2.25,0.25);
+        \draw[->,color=cyan] (matidx) edge (0.75,0.25);
+        
+        % Arrows from embedding matrix to sentence matrix. 
+        \draw[->,color=magenta] (-2.75, 2) edge (-7,3.25);
+        \draw[->,color=yellow] (-2.25, 2) edge (-4,3.25);
+        \draw[->,color=blue] (0.25, 2) edge (-0,3.25);
+        \draw[->,color=red] (2.25, 2) edge (3.5,3.25);
+        \draw[->,color=cyan] (0.75, 2) edge (6.5,3.25);
+    \end{scope}
+    
+    % Embedding matrix
+    \begin{scope}
+        \draw[step=5mm, black] (-3,0) grid (3,2);
+        
+        % Fill the columns selected by the input vector. 
+        % cat
+        \fill[magenta,fill opacity=.25] (-3,0) rectangle (-2.5, 2);
+        % sat
+        \fill[yellow,fill opacity=.25] (-2.5,0) rectangle (-2, 2);
+        % on
+        \fill[blue,fill opacity=.25] (0.0,0) rectangle (0.5, 2);
+        % the
+        \fill[red,fill opacity=.25] (2,0) rectangle (2.5, 2);
+        % mat
+        \fill[cyan,fill opacity=.25] (0.5,0) rectangle (1.0, 2);
+    \end{scope}
+    
+    % Sentence matrix.
+    \begin{scope}[xshift=-15,yshift=100]
+        % Fill the preposition's column with gray.
+        %\fill[gray,fill opacity=.75] (0.0,0) rectangle (0.5, 2);
+    	% The grid itself.
+    	
+        %\draw[step=5mm, black] (-1,0) grid (1.5,2);
+        \draw[step=5mm, black] (-10,0) grid (10,.5);
+        \fill[magenta,fill opacity=.25] (-10,0) rectangle (-6, 0.5);
+        \fill[yellow,fill opacity=.25] (-6,0) rectangle (-2, 0.5);
+        \fill[blue,fill opacity=.25] (-2,0) rectangle (2, 0.5);
+        \fill[red,fill opacity=.25] (2,0) rectangle (6, 0.5);
+        \fill[cyan,fill opacity=.25] (6,0) rectangle (10, 0.5);
+    \end{scope}
+    
+    \draw [decorate,decoration={brace,amplitude=4pt}, yshift=0pt] (-11,5) -- (10,5) node [label={[label distance=0.25cm,text depth=-1ex, rotate=0]\parbox{2cm}{\centering Residual block input}}] at (-0.5,5.25) {};
+    
+    \node at (-6,-3) {\centering Word inputs} edge[->] (-3,-3) {};
+    
+    \node at (-6,-1.5) {\centering Embedding indices} edge[->] (-3,-1.5) {};
+    
+    % Braces/labels of layers.
+    \node at (5,-2.25) {\parbox{3cm}{\centering Mapping from\\words to indices}} edge[->] (2.5,-2.25) {};
+    
+    \draw [decorate,decoration={brace,amplitude=3pt,mirror}, yshift=0pt] (4,-0.25) -- (4,2.25) node [label={[label distance=0.25cm, rotate=0]\parbox{2cm}{\centering Word embedding matrix}}] at (5.5,-0.25) {};
+\end{tikzpicture}

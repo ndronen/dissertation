@@ -1,0 +1,100 @@
+\begin{tikzpicture}[scale=0.9,every node/.style={minimum size=1cm,scale=0.9,color=black},on grid]
+
+% Input
+\begin{scope}[shift={(-3,-1)}]
+    \node at (1,3.5) {\textsc{Input}};
+    
+    % First row.
+    \node at (0.5,1.5) {0.5};
+    \node at (1.5,1.5) {0.4};
+    %\node at (2.5,1.5) {0.2};
+    
+    % Second row.
+    \node at (0.5,0.5) {0.1};
+    \node at (1.5,0.5) {0.3};
+    
+    \draw[step=10mm, black, thick] (0,0) grid (2,2);
+\end{scope}
+
+\node at (0,0) {$\Huge \ast$};
+
+% Filter 
+\begin{scope}[shift={(1,-1)}]
+    \node at (1,3.5) {\textsc{Filter}};
+    
+    % First row
+    \fill[black,fill opacity=.3] (0,1) rectangle (1,2);
+    \fill[black,fill opacity=.8] (1,1) rectangle (2,2);
+    \node at (0.5,1.5) {0.7};
+    \node[color=white] at (1.5,1.5) {0.2};
+    
+    % Second row
+    \fill[black,fill opacity=.1] (0,0) rectangle (1,1);
+    \fill[black,fill opacity=.4] (1,0) rectangle (2,1);
+    \node at (0.5,0.5) {0.9};
+    \node at (1.5,0.5) {0.6};
+    
+    \draw[step=10mm, black, thick] (0,0) grid (2,2);
+    
+    % Loop above the filter.
+    \node at (1,2.5) {} edge[in=175,out=5,loop] () {};
+    % Loop next to the filter.
+    \node at (2.5,1) {} edge[in=275,out=85,loop] () {};
+\end{scope}
+
+\node at (2,-1.5) {$\Huge \downarrow$};
+
+% Input (again)
+\begin{scope}[shift={(-3,-4)}]
+    % First row.
+    \node at (0.5,1.5) (input11) {0.5};
+    \node at (1.5,1.5) (input21) {0.4};
+    %\node at (2.5,1.5) {0.2};
+    
+    % Second row.
+    \node at (0.5,0.5) (input12) {0.1};
+    \node at (1.5,0.5) (input22) {0.3};
+    
+    \draw[step=10mm, black, thick] (0,0) grid (2,2);
+\end{scope}
+
+%\node at (0,-3) {$\Huge \ast$};
+
+% Filter after flipping
+\begin{scope}[shift={(1,-4)}]
+    % New first row.
+    \fill[black,fill opacity=.4] (0,1) rectangle (1,2);
+    \fill[black,fill opacity=.1] (1,1) rectangle (2,2);
+    \node at (0.5,1.5) (param11) {0.6};
+    \node at (1.5,1.5) (param21) {0.9};
+    
+    % New second. 
+    \fill[black,fill opacity=.8] (0,0) rectangle (1,1);
+    \fill[black,fill opacity=.3] (1,0) rectangle (2,1);
+    \node[color=white] at (0.5,0.5) (param12) {0.2};
+    \node at (1.5,0.5) (param22) {0.7};
+    
+    \draw[step=10mm, black, thick] (0,0) grid (2,2);
+\end{scope}
+
+\draw [decorate,color=red,decoration={brace,amplitude=5pt}] (-3.7,-5.15) -- (-2.10,-5.15);
+\draw[color=red] (input11) to[out=180,in=90] (-2.99,-5);
+\draw[color=red] (param11) to[out=180,in=90] (-2.80,-5);
+
+\draw [decorate,color=yellow,decoration={brace,amplitude=5pt}] (-1.75,-5.15) -- (-0.2,-5.15);
+\draw[color=yellow] (input12) to[out=-90,in=90] (-1.11,-5);
+\draw[color=yellow] (param12) to[out=180,in=90] (-0.85,-5);
+
+\draw [decorate,color=cyan,decoration={brace,amplitude=5pt}] (0.2,-5.15) -- (1.7,-5.15);
+\draw[color=cyan] (input21) to[out=0,in=90] (0.83,-5);
+\draw[color=cyan] (param21) to[out=0,in=90] (1.05,-5);
+
+\draw [decorate,color=blue,decoration={brace,amplitude=5pt}] (2.1,-5.15) -- (3.6,-5.15);
+\draw[color=blue] (input22) to[out=0,in=90] (2.75,-5);
+\draw[color=blue] (param22) to[out=0,in=90] (2.95,-5);
+
+\begin{scope}[shift={(0.6,-5.5)}]
+\node at (0,0) {$0.5\times0.6 + 0.1\times0.2 + 0.4\times0.9 + 0.3\times0.7 = 0.89$};
+\end{scope}
+
+\end{tikzpicture}

@@ -1,0 +1,51 @@
+\documentclass[19pt,mathserif,serif]{beamer}
+\usepackage{fontspec}
+\usepackage{xunicode} % Unicode extras
+\usepackage{xltxtra}  % Fixes
+\usepackage[normalem]{ulem}
+\usepackage{multirow}
+\usepackage{amsfonts}
+\usepackage{siunitx} % for formatting numbers with comma separation
+\usepackage{footmisc}
+\usepackage{subfigure}
+\usepackage{pbox}
+\usepackage{todonotes}
+
+\input colors-fantastic-fox.sty
+
+\usetheme{Pittsburgh}
+\usecolortheme{defense}
+\setbeamertemplate{items}[ball]
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{frametitle}[default][center]
+
+\usepackage{tikz}
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,decorations.pathreplacing,decorations.pathmorphing,shapes,matrix,shapes.symbols,arrows.meta,backgrounds,quotes,angles}
+\usepackage{smartdiagram}
+
+\begin{document}
+
+\title{Correcting Writing Errors with Convolutional Neural Networks}
+\author[shortname]{Nicholas Dronen \inst{1,2}}
+\institute[shortinst]{\inst{1} Pearson \and \inst{2} University of Colorado}
+
+\maketitle
+
+\input sections/intro-and-summary.tex
+
+\input sections/convnet-background.tex
+
+\input sections/data.tex
+
+\input sections/non-word-detection.tex
+
+\input sections/isolated-non-word-correction.tex
+
+\input sections/context-dependent-non-word-correction.tex
+
+\input sections/real-word-correction.tex
+
+\input sections/future-directions.tex
+    
+\end{document}

@@ -1,0 +1,45 @@
+\begin{frame}
+\frametitle{Data: Error Corpora}
+\begin{table}
+    \centering
+    \begin{tabular}{rrrr}
+    Corpus & Errors & $|V\,|$ & Real word errors (\%) \\
+    \hline
+    Aspell    & 531   & 450  & 18 (3) \\
+    Birbeck   & 36133 & 6136 & 3750 (10) \\
+    Holbrook  & 1771  & 1199 & 544 (3) \\
+    Wikipedia & 2455  & 1922 & 37 (2) \\ 
+    \end{tabular}
+    \caption{Available from \url{http://www.dcs.bbk.ac.uk/~roger/}}
+\end{table}
+\end{frame}
+
+\begin{frame}
+\frametitle{Data: Generated Random Non-words}
+\begin{itemize}
+    \item Transpose, insert, substitute, delete 
+    \item Apply operations $\ge 1$ times 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Data: Generated Plausible Non-words}
+\begin{table}
+    \centering
+    \begin{tabular}{cccc}
+    \textsc{Edit} & \textsc{Probability} & \textsc{Non-word} \\
+    \hline
+    $\text{ri} \rightarrow \text{r}$ & 0.18 & brck \\
+    $\text{i} \rightarrow \text{e}$ & 0.15 & breck \\
+    $\text{ic} \rightarrow \text{is}$ & 0.14 & brisk \\
+    $\text{ri} \rightarrow \text{re}$ & 0.13 & breck \\
+    $\text{c} \rightarrow \text{s}$ & 0.10 & brisk \\
+    $\text{ic} \rightarrow {i}$ & 0.10 & brik \\
+    $\text{ri} \rightarrow {ry}$ & 0.06 & bryck \\
+    $\text{ri} \rightarrow {ra}$ & 0.06 & brack \\
+    $\text{ck} \rightarrow {c}$ & 0.04 & bric \\
+    $\text{c} \rightarrow {co}$  & 0.04 & bricok \\
+    \end{tabular}
+    \caption{Creating non-words from ``brick'' by sampling transformations with probability proportional to their frequency in a corpus.}
+\end{table}
+\end{frame}

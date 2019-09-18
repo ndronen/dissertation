@@ -1,0 +1,142 @@
+\begin{tikzpicture}[scale=0.45,every node/.style={minimum size=1cm,scale=0.45},on grid]
+    % Character-level input (the misspelling).
+    \begin{scope}[xshift=-70]
+        \node at (-0.5,4.2) {$+~\mathcal{N}$(0, $\sigma^2$)};
+        
+        \begin{scope}[xshift=-15,yshift=35]
+            \node[color=red] at (-2,0) {\textasciicircum};
+            \node[color=red] at (-1.5,0) {F};
+            \node[color=red] at (-1,0) {e};
+            \node[color=red] at (-0.5,0) {b};
+            \node[color=red] at (0,0) {u};
+            \node[color=red] at (0.5,0) {a};
+            \node[color=red] at (1,0) {r};
+            \node[color=red] at (1.5,0) {y};
+            \node[color=red] at (2,0) {\$};
+        \end{scope}
+        
+        \begin{scope}[xshift=-20,yshift=50]
+            \draw[step=5mm, red] (-2,0) grid (2.5,2);
+        \end{scope}
+        
+    	\begin{scope}[xshift=-30,yshift=248]
+            % Output of convolution.
+            \foreach \shift in {0, ..., 2}
+            {
+            	\begin{scope}[yshift=-5*\shift, xshift=-4*\shift]
+                	% Opacity to prevent graphical interference.
+                	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 0.5);
+            
+                	% The grid itself.
+                	\draw[step=5mm, red] (0,0) grid (1.5, 0.5);
+            	\end{scope}
+        	}
+        \end{scope}
+        
+        \begin{scope}[xshift=-15,yshift=308]
+            % Output of max pooling operation.
+            \foreach \shift in {0, ..., 2}
+            {
+            	\begin{scope}[yshift=-5*\shift, xshift=-4*\shift]
+                	% Opacity to prevent graphical interference.
+                	\fill[white,fill opacity=.875] (0,0) rectangle (.5, .5);
+            
+                	% The grid itself.
+                	\draw[step=5mm, red] (0,0) grid (.5, .5);
+            	\end{scope}
+        	}
+        \end{scope}
+    \end{scope}
+    
+    % Character-level inputs and embedding for suggested correction.
+    \begin{scope}[xshift=70]
+        % Tokens of context and suggestion.
+        \begin{scope}[xshift=-15,yshift=35]
+            \node[color=black!60!green] at (-2,0) {\textasciicircum};
+            \node[color=black!60!green] at (-1.5,0) {F};
+            \node[color=black!60!green] at (-1,0) {e};
+            \node[color=black!60!green] at (-0.5,0) {b};
+            \node[color=black!60!green] at (0,0) {r};
+            \node[color=black!60!green] at (0.5,0) {u};
+            \node[color=black!60!green] at (1,0) {a};
+            \node[color=black!60!green] at (1.5,0) {r};
+            \node[color=black!60!green] at (2,0) {y};
+            \node[color=black!60!green] at (2.5,0) {\$};
+        \end{scope}
+        
+        \begin{scope}[xshift=-15,yshift=50]
+            \draw[step=5mm, black!60!green] (-2,0) grid (2.5,2);
+        \end{scope}
+        
+    	\begin{scope}[xshift=-30,yshift=248]
+            % Output of convolution.
+            \foreach \shift in {0, ..., 2}
+            {
+            	\begin{scope}[yshift=-5*\shift, xshift=-4*\shift]
+                	% Opacity to prevent graphical interference.
+                	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 0.5);
+            
+                	% The grid itself.
+                	\draw[step=5mm, black!60!green] (0,0) grid (1.5, 0.5);
+            	\end{scope}
+        	}
+        \end{scope}
+        
+        \begin{scope}[xshift=-15,yshift=308]
+            % Output of max pooling operation.
+            \foreach \shift in {0, ..., 2}
+            {
+            	\begin{scope}[yshift=-5*\shift, xshift=-4*\shift]
+                	% Opacity to prevent graphical interference.
+                	\fill[white,fill opacity=.875] (0,0) rectangle (.5, .5);
+            
+                	% The grid itself.
+                	\draw[step=5mm, black!60!green] (0,0) grid (.5, .5);
+            	\end{scope}
+        	}
+        \end{scope}
+    \end{scope}
+    
+    % Shared convolutional filters.
+    \begin{scope}[xshift=-25,yshift=145]
+        \foreach \shift in {0, ..., 2}
+        {
+        	\begin{scope}[yshift=-5*\shift, xshift=-4*\shift]
+        	% Opacity to prevent graphical interference.
+            	\fill[white,fill opacity=.875] (0,0) rectangle (1.5, 2);
+            	% The grid itself.
+            	\draw[step=5mm, black] (0,0) grid (1.5, 2);
+        	\end{scope}
+        }
+    \end{scope}
+    
+    % Final layers - cosine, mlp, softmax.
+    \begin{scope}[xshift=-15, yshift=350]
+        % Cosine operation 
+        \draw[-{Latex[red,length=5mm,width=2mm]},red,ultra thick] (0,0) -> (105:3);
+        \draw[-{Latex[black!60!green,length=5mm,width=2mm]},black!60!green,ultra thick] (0,0) -> (70:3);
+        \draw[ultra thick] (0.7,2) arc [radius=2, start angle=70, end angle=105];
+        \node at (0.1,1.5) {\LARGE $\theta$};
+        
+        % MLP.
+        %\fill[black] (-.5,4.499) rectangle (.5, 5.0);
+        \draw (-2,4) rectangle (2,6) node[pos=.5] {Multi-layer perceptron};
+        
+        %\draw[step=5mm, black] (-.5,4.499) grid (.5, 5.0);
+        % Softmax.
+        \draw (-1,7) rectangle (1,8) node[pos=.5] {Softmax};
+    \end{scope}
+    
+    % Braces/labels of layer outputs.
+    \draw [decorate,decoration={brace,amplitude=5pt}, yshift=0pt] (-6,1.25) -- (-6,4) node [label={[label distance=0.25cm,text depth=-1ex, rotate=90]Embeddings}] at (-6.5,2) {};
+    
+    \draw [decorate,decoration={brace,amplitude=5pt}, yshift=0pt] (-6,7.75) -- (-6,9.5) node [label={[label distance=0.25cm, rotate=90]Filter outputs}] at (-6.5,8) {};
+    
+    \draw [decorate,decoration={brace,amplitude=5pt}, yshift=0pt] (-6,10.25) -- (-6,11.75) node [label={[label distance=0.25cm, rotate=90]Pool outputs}] at (-6.5,10.5) {};
+    
+    % Braces/labels of layers.
+    \draw [decorate,decoration={brace,amplitude=5pt,mirror}, yshift=0pt] (6,4.25) -- (6,7.25) node [label={[label distance=0.25cm, rotate=90]Shared filters}] at (7.75,5.25) {};
+    
+    \draw [decorate,decoration={brace,amplitude=5pt,mirror}, yshift=0pt] (6,11.5) -- (6,15) node [label={[label distance=0.25cm, rotate=90]Cosine similarity}] at (7.75,13) {};
+    
+\end{tikzpicture}
